@@ -1,0 +1,40 @@
+<?php
+
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\user\RoleInterface;
+use \Drupal\Core\Database\Database;
+
+/**
+ * Implements hook_schema().
+ */
+function export_d6_schema() {
+  $schema['import_log'] = array(
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'source_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => '25',
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+function export_d6_update_8001() {
+  $schema = export_d6_schema();
+  db_create_table('import_log', $schema['import_log']);
+}

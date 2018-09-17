@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * Implements hook_field_schema().
+ */
+function zna_event_options_field_schema($field) {
+  $columns = array(
+    'value' => array(
+      'type' => 'varchar',
+      'length' => 256,
+      'not null' => FALSE,
+    ),
+  );
+  $columns += array(
+    'location' => array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+    ),
+  );
+  $columns += array(
+    'number' => array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+    ),
+  );
+  return array(
+    'columns' => $columns,
+  );
+}

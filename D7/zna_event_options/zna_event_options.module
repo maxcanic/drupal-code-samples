@@ -1,0 +1,274 @@
+<?php
+
+/**
+ * Implements hook_field_info().
+ */
+function zna_event_options_field_info() {
+
+  return array(
+    'event_options' => array(
+      'label' => t('Event Options'),
+      'description' => t('This field stores Event options in database.'),
+      'instance_settings' => array('location' => '', 'number' => 1),
+      'default_widget' => 'event_options_widget',
+      'default_formatter' => 'event_options_formatter',
+      'property_type' => 'text',
+    ),
+  );
+
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function zna_event_options_field_is_empty($item, $field) {
+  return !isset($item['value']) || $item['value'] === '';
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function zna_event_options_field_widget_info() {
+
+  return array(
+    'event_options_widget' => array(
+      'label' => t('Event options widget'),
+      'field types' => array('event_options'),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+      ),
+      'settings' => array(
+        'options_selected' => '',
+      ),
+    ),
+  );
+
+}
+
+function zna_event_options_field_widget_settings_form($field, $instance) {
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+
+  $element['options_selected'] = array(
+    '#type' => 'textarea',
+    '#description' => t('Use key|value|location|number pattern'),
+    '#title' => t('Event options'),
+    '#default_value' => $settings['options_selected'],
+
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function zna_event_options_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+  $result = _zna_event_options_number_validation($field['field_name'], $instance['entity_type'], $instance['bundle']);
+
+  $capacity = _zna_event_options_capacity($field['field_name']);
+
+  $value_key = key($field['columns']);
+
+  $type = $instance['widget']['type'];
+
+  $options = $instance['widget']['settings']['options_selected'];
+
+  $options = preg_split("/\\r\\n|\\r|\\n/", $options);
+
+
+  $multiple = $field['cardinality'] > 1 || $field['cardinality'] == FIELD_CARDINALITY_UNLIMITED;
+
+  $field_options = array();
+
+  if (!empty($options)) {
+    foreach ($options as $option) {
+      $option_parts = explode('|', $option);
+      if (count($option_parts) > 1) {
+        $field_options[$option_parts[0]] = $option_parts[1];
+      }
+    }
+  }
+
+  if($result <= $capacity) {
+    switch($type) {
+      case 'event_options_widget':
+        if($multiple == 1) {
+          $element += array(
+            '#type' => 'checkboxes',
+            '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : array(),
+            '#options' => $field_options,
+          );
+        }
+        else {
+          $element += array(
+            '#type' => 'radios',
+            '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : array(),
+            '#options' => $field_options,
+          );
+        }
+      break;
+    }
+
+    $element += array(
+      '#value_key' => $value_key,
+      '#element_validate' => array('zna_event_options_validate'),
+    );
+  } else {
+    drupal_set_message('There are no more available spaces for event registration.');
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function zna_event_options_field_formatter_info() {
+
+  return array(
+    'event_options_formatter' => array(
+      'label' => t('Event Options'),
+      'field types' => array('event_options'),
+    ),
+  );
+
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function zna_event_options_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+
+  $element = array();
+
+  $display_type = $display['type'];
+
+  switch ($display_type) {
+    case 'event_options':
+      foreach ($items as $delta => $item) {
+
+        $options = preg_split("/\\r\\n|\\r|\\n/", $item['value']);
+
+        foreach ($options as &$option ) {
+          $option_parts = explode( '|', $option );
+          $option = $option_parts[1];
+        }
+
+        $element[$delta] = array(
+          '#type' => 'markup',
+          '#markup' =>  'Aveliable options are: ' . implode(", ",$options),
+        );
+      }
+
+    break;
+  }
+
+  return $element;
+
+}
+
+/**
+ * Implements hook_field_validate().
+ */
+function zna_event_options_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+
+  $options_all = $instance['widget']['settings']['options_selected'];
+
+  $options = explode("\n", $options_all);
+
+  $options_data = array();
+
+  if (!empty($options)) {
+    foreach ($options as $option) {
+      $option_parts = explode('|', $option);
+      $options_data[$option_parts[0]] = $option_parts;
+    }
+  }
+
+  foreach($options_data as $k => $v) {
+    if(empty($v[0]) || empty($v[1]) || empty($v[2]) || empty($v[3])) {
+      $errors[$field['field_name']][$langcode][$k][] = array(
+        'error' => 'options_event_illegal_value',
+        'message' => t('Illegal value for %name, you need to fill values by pattern key|value|location|number.', array('%name' => $k)),
+      );
+    }
+  }
+}
+
+/**
+ * @param $element
+ * @param $form_state
+ * Helper function to store multiple values.
+ */
+function zna_event_options_validate($element, &$form_state) {
+
+  $field = $form_state['field'][$element['#field_name']][$element['#language']]['field'];
+
+  $field_name = $field['field_name'];
+
+  $field_instance = field_info_instance($element['#entity_type'], $element['#field_name'], $element['#bundle']);
+  $options = preg_split("/\\r\\n|\\r|\\n/", $field_instance['widget']['settings']['options_selected']);
+
+  $options_data = array();
+  if (!empty($options)) {
+    foreach ($options as $option) {
+      $option_parts = explode('|', $option);
+      $options_data[$option_parts[0]] = $option_parts;
+    }
+  }
+
+  $values = array();
+
+  if($element['#type'] == 'radios') {
+    $value_data = array($element['#value']);
+  } else {
+    $value_data = array_filter($element['#value']);
+  }
+
+
+
+  if (!empty($value_data)) {
+    foreach ($value_data as $k => $v) {
+      $values[] = array(
+        'value' => $v,
+        'location' => (!empty($options_data[$v][2])) ? $options_data[$v][2] : '',
+        'number' => 1,
+      );
+    }
+  } else {
+    $values = array(NULL);
+  }
+
+  form_set_value($element, $values, $form_state);
+}
+
+/**
+ * @param $field
+ * @param $type
+ * @param $bundle
+ * @return int
+ * Helper function to return number of registrated users.
+ */
+function _zna_event_options_number_validation($field, $type, $bundle) {
+  $field_name = $field . '_number';
+  $table_name = 'field_data_' . $field;
+  return (int) db_query("SELECT SUM($field_name) AS count FROM {$table_name} WHERE entity_type = :type AND bundle = :bundle", array(':type' => $type, ':bundle' => $bundle))->fetchfield();
+}
+
+/**
+ * @param $field
+ * @return int
+ * Helper function to check event registration capacity.
+ */
+function _zna_event_options_capacity($field) {
+  if(!empty($field)) {
+    $table_name = 'field_data_' . $field;
+
+    $entity_id = (int) db_query("SELECT f.entity_id FROM {$table_name} f")->fetchfield();
+
+    $registration_id = (int) db_query("SELECT r.entity_id FROM registration r WHERE r.registration_id = {$entity_id}")->fetchField();
+
+    return (int) db_query("SELECT e.capacity FROM registration_entity e WHERE e.entity_id = {$registration_id}")->fetchfield();
+  }
+}

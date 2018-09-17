@@ -1,0 +1,187 @@
+<?php
+
+/**
+ * @file
+ * Custom template for brightcove html5 video player.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function pcm_brightcove_menu() {
+  $items['pcm_brightcove/%/%'] = array(
+    'title' => 'Brightcove download link',
+    'access arguments' => array('access content'),
+    'page arguments' => array(1, 2),
+    'page callback' => 'pcm_brightcove_download'
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_video_embed_handler_info_alter().
+ */
+function pcm_brightcove_video_embed_handler_info_alter(&$info) {
+  $info['brightcove']['function'] = 'pcm_brightcove_video_embed';
+}
+
+/**
+ * Implements hook_theme().
+ */
+function pcm_brightcove_theme($existing, $type, $theme, $path) {
+  return array(
+    'brightcove_field_embed' => array(
+      'variables' => array('vars' => NULL),
+      'template' => 'brightcove-field-embed',
+      'path' => $path . '/templates',
+    )
+  );
+}
+
+/**
+ * Custom handler for Brightcove videos.
+ */
+function pcm_brightcove_video_embed($url, $settings) {
+  $output['#markup'] = theme('brightcove_field_embed');
+
+  return $output;
+}
+
+/**
+ * Implements hook_preprocess_views_view_fields().
+ */
+function pcm_brightcove_preprocess_views_view_fields(&$vars) {
+  if ($vars['view']->name == 'podcast') {
+    // Wrapping video and cover image.
+    $vars['fields']['field_podcast_cover_image']->wrapper_prefix = '<div class="podcast__media"><div class="views-field views-field-field-podcast-video">';
+    $vars['fields']['field_podcast_video']->wrapper_suffix = '</div></div>';
+
+    // Wrapping remaining fields.
+    $vars['fields']['created']->wrapper_prefix = '<div class="podcast__text"><div class="views-field views-field-created">';
+    $vars['fields']['views-field-nothing']->wrapper_suffix = '</div>';
+  }
+}
+
+/**
+ * Get video file info from brightcove.
+ */
+function pcm_brightcove_download($video_id, $nid = FALSE, $url_only = false) {
+
+  $data = array();
+
+  // Returns entity.
+  $brightcove_client = brightcove_client_load_or_default();
+
+  // Client id.
+  $client_id = $brightcove_client->client_id;
+
+  // Client secret.
+  $client_secret = $brightcove_client->client_secret;
+
+  // Account id.
+  $account_id = $brightcove_client->account_id;
+
+  // Auth string.
+  $auth_string = "{$client_id}:{$client_secret}";
+
+  // Get access token.
+  $request = "https://oauth.brightcove.com/v4/access_token?grant_type=client_credentials";
+
+  $ch = curl_init($request);
+
+  curl_setopt_array($ch, array(
+    CURLOPT_POST => TRUE,
+    CURLOPT_RETURNTRANSFER => TRUE,
+    CURLOPT_SSL_VERIFYPEER => FALSE,
+    CURLOPT_USERPWD => $auth_string,
+    CURLOPT_HTTPHEADER => array(
+      'Content-type: application/x-www-form-urlencoded',
+    ),
+    CURLOPT_POSTFIELDS => $data
+  ));
+
+  $response = curl_exec($ch);
+  curl_close($ch);
+
+  if ($response === FALSE) {
+    die(curl_error($ch));
+  }
+
+  $responseData = json_decode($response, TRUE);
+  $access_token = $responseData['access_token'];
+
+  // Get single video item.
+  $request = "https://cms.api.brightcove.com/v1/accounts/{$account_id}/videos/{$video_id}/sources";
+
+  $ch = curl_init($request);
+
+  curl_setopt_array($ch, array(
+    CURLOPT_CUSTOMREQUEST  => "GET",
+    CURLOPT_RETURNTRANSFER => TRUE,
+    CURLOPT_SSL_VERIFYPEER => FALSE,
+    CURLOPT_HTTPHEADER     => array(
+      'Content-type: application/json',
+      "Authorization: Bearer {$access_token}",
+    ),
+    CURLOPT_POSTFIELDS => json_encode($data)
+  ));
+
+  $response = curl_exec($ch);
+  curl_close($ch);
+
+  if ($response === FALSE) {
+    die(curl_error($ch));
+  }
+
+  $responseData = json_decode($response, TRUE);
+
+  $url = $responseData[1]['src'];
+
+  if ($url_only) {
+    return $url;
+  }
+
+  // Call download function.
+  _get_download_brightcove($url, $nid);
+
+}
+
+/**
+ * Download file functionality.
+ */
+function _get_download_brightcove($url, $nid) {
+
+  if (!empty($nid)) {
+    $node = node_load($nid);
+    $title = str_replace(' ', '_', $node->title);
+  }
+
+  $file = system_retrieve_file($url, $destination = NULL, $managed = TRUE, $replace = FILE_EXISTS_REPLACE) ;
+  $file->status = 0;
+  file_save($file);
+
+  if ($file && !empty($file->uri)) {
+    $file_path = drupal_realpath($file->uri);
+
+    // required for IE, otherwise Content-disposition is ignored.
+    if(ini_get('zlib.output_compression')) {
+      ini_set('zlib.output_compression', 'Off');
+    }
+
+    $ctype = 'aplication/force-download';
+
+    header("Pragma: public"); // required
+    header("Expires: 0");
+    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+    header("Cache-Control: private",false); // required for certain browsers
+    header("Content-Type: $ctype");
+    header("Content-Disposition: attachment; filename={$title}.mp4" );
+    header("Content-Transfer-Encoding: binary");
+    header("Content-Length: ". $file->filesize);
+    readfile("$file_path");
+  }
+
+  exit();
+
+}

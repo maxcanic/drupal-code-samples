@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * Create default cover image for podcast content type.
+ */
+function pcm_brightcove_update_7001(&$sandbox) {
+  $path = drupal_get_path('module', 'pcm_brightcove');
+  $filepath =  $path . '/default_image/podcast-cover.jpg';
+  $file_name = 'podcast-cover.jpg';
+
+  $image = @file_get_contents($filepath);
+
+  if (!empty($image)) {
+    $dst = "public://{$file_name}";
+      if ($file = file_save_data($image, $dst, FILE_EXISTS_REPLACE)) {
+        $file->status = FILE_STATUS_PERMANENT;
+        $file = file_save($file);
+
+        $field = db_query('SELECT data FROM {field_config_instance} WHERE field_name = :field_name AND bundle = :bundle', array(':field_name' => 'field_podcast_cover_image', ':bundle' => 'podcast'))->fetchField();
+
+        $field = unserialize($field);
+
+        $field['settings']['default_image'] = $file->fid;
+
+        db_update('field_config_instance')
+          ->fields(array('data' => serialize($field)))
+          ->condition('field_name', 'field_podcast_cover_image')
+          ->execute();
+    }
+  }
+}

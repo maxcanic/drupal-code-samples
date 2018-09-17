@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Uninstall hook for the module, that will delete variables created by module.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function pcm_user_authorisation_enable() {
+  variable_set('pcm_user_authorisation', 'podcast');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function pcm_user_authorisation_uninstall() {
+  variable_del('pcm_user_authorisation');
+}

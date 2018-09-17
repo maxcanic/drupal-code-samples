@@ -1,0 +1,331 @@
+<?php
+
+/**
+ * Define constants for twilio
+ */
+//define('TWILIO_LIBRARY', 'twilio');
+//define('TWILIO_USER_PENDING', 1);
+//define('TWILIO_USER_CONFIRMED', 2);
+//define('TWILIO_USER_MAX_CHARS', 140);
+//define('TWILIO_API_VERSION', '2010-04-01');
+define('TWILIO_ADMIN_PATH', 'admin/config/system/my-twilio');
+//define('TWILIO_SMS_LONG_MULTIPLE', 0);
+//define('TWILIO_SMS_LONG_TRUNCATE', 1);
+define('TWILIO_DEFAULT_COUNTRY_CODE', 1);
+define('TWILIO_USER_AUTH_PATH', 'user/login/twilio-auth');
+
+///**
+// * Load module include files.
+// */
+//module_load_include('inc', 'twilio', 'twilio.user');
+module_load_include('inc', 'my_twilio', 'my_twilio.codes');
+//module_load_include('inc', 'twilio', 'twilio.actions');
+
+/**
+ * Implements hook_menu().
+ */
+function my_twilio_menu() {
+  $items[TWILIO_ADMIN_PATH] = array(
+    'title' => 'My Twilio',
+    'description' => 'Administer your twilio settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('my_twilio_admin_form'),
+    'access arguments' => array('administer my_twilio'),
+    'file' => 'my_twilio.admin.inc',
+  );
+  $items[TWILIO_ADMIN_PATH . '/settings'] = array(
+    'title' => 'My Twilio Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items[TWILIO_ADMIN_PATH . '/test'] = array(
+    'title' => 'Send Test SMS message',
+    'description' => 'Test your SMS functionality',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('my_twilio_admin_test_form'),
+    'access arguments' => array('administer my_twilio'),
+    'file' => 'my_twilio.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+  );
+
+  $items[TWILIO_USER_AUTH_PATH] = array(
+    'title' => 'User account "Twilio" authentication',
+    'description' => 'Authenticate via SMS',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('my_twilio_auth_form'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+function my_twilio_send($number, $message, $country = TWILIO_DEFAULT_COUNTRY_CODE, $media = NULL, $options = array()) {
+  // Truncate the message to 160 characters.
+  $message_truncated = substr($message, 0, 160);
+  $response = my_twilio_command('sendmsg', array(
+    'country' => $country,
+    'number' => $number,
+    'message' => $message_truncated,
+    'media' => $media,
+    'options' => $options,
+  ));
+
+  return $response;
+}
+
+function my_twilio_command($command = '', $data = array()) {
+  $account_sid = variable_get('my_twilio_account', FALSE);
+  $auth_token = variable_get('my_twilio_token', FALSE);
+  $number = variable_get('my_twilio_number', FALSE);
+
+  // If we don't have one of our twilio variables don't bother doing anything.
+  if (!$account_sid || !$auth_token || !$number) {
+    return FALSE;
+  }
+
+  switch ($command) {
+    case 'sendmsg':
+      $url = "https://api.twilio.com/2010-04-01/Accounts/$account_sid/SMS/Messages";
+
+      $data = array (
+        'From' => $number,
+        'To' => '+' . $data['country'] . $data['number'],
+        'Body' => $data['message']
+      );
+
+      $post = http_build_query($data);
+      $request = curl_init($url );
+
+      curl_setopt($request, CURLOPT_POST, true);
+      curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
+      curl_setopt($request, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+      curl_setopt($request, CURLOPT_USERPWD, "$account_sid:$auth_token");
+      curl_setopt($request, CURLOPT_POSTFIELDS, $post);
+
+//      $response = curl_exec($request);
+
+      try {
+        $response = curl_exec($request);
+
+//        var_dump($response);
+
+        curl_close($request);
+
+        return TRUE;
+      } catch (Exception $e) {
+        watchdog('My Twilio', $e->getMessage(), array(), WATCHDOG_ERROR);
+
+        $message = t('My Twilio has returned the error: "@error".', array('@error' => $e->getMessage()));
+        drupal_set_message($message, 'error');
+      }
+
+      if (!empty($response->status) && $response->status == 'failed') {
+//        var_dump($post);
+//        var_dump($response);
+        watchdog('My Twilio', 'An unkown error occured during the HTTP request');
+      }
+
+
+      break;
+    //@TODO validate
+//    case 'validate':
+//      $validator = new Services_Twilio_RequestValidator($auth_token);
+//      $type = !empty($data['type']) ? $data['type'] : 'sms';
+//      $url = $GLOBALS['base_url'] . '/twilio/' . $type;
+//      $signature = $_SERVER["HTTP_X_TWILIO_SIGNATURE"];
+//      $post_vars = $_POST;
+//      if ($validator->validate($signature, $url, $post_vars)) {
+//        watchdog('Twilio', 'Incoming SMS message validated');
+//        return TRUE;
+//      }
+//      else {
+//        watchdog('Twilio', 'Incoming SMS could not be validated');
+//      }
+//      break;
+    default:
+      return FALSE;
+  }
+
+  return FALSE;
+}
+
+
+
+//function my_twilio_form_alter(&$form, &$form_state, $form_id) {
+////  print_r($form_id);
+//  if (in_array($form_id, ['user_login', 'user_register_form'])) {
+//
+////    $form['#submit'] = ['my_twilio_login_submit'];
+////    drupal_set_message($form_id, 'warning');
+//    print_r($form);
+//  }
+//}
+
+/**
+ * Implements hook_form_FORMID_alter().
+ */
+function my_twilio_form_user_login_alter(&$form, &$form_state, $form_id) {
+  $form['#submit'] = ['my_twilio_login_submit'];
+  var_dump($form_state);
+}
+
+
+function my_twilio_login_submit (&$form, &$form_state) {
+  global $user;
+  //var_dump($form_state);
+//  exit;
+  $user = user_load($form_state['uid']);
+
+  if ($user) {
+//    $form_state['redirect'] = TWILIO_USER_AUTH_PATH . $user->uid;
+    $form_state['#rebuild'] = FALSE;
+    $form_state['step'] = 2;
+  }
+
+//  $form_state['redirect'] = 'user/' . $user->uid;
+//  user_login_finalize($form_state);
+}
+
+
+
+function my_twilio_auth_form($form, &$form_state) {
+  $form = array();
+
+  if (!isset($form_state['sms_authentication'])) $form_state['sms_authentication'] = 'sms_send';
+
+  switch ($form_state['sms_authentication']) {
+    case 'sms_send':
+      return my_twilio_auth_send_form($form, $form_state);
+      break;
+
+    case 'sms_code':
+      return my_twilio_auth_code_form($form, $form_state);
+      break;
+  }
+
+  return $form;
+
+}
+
+function my_twilio_auth_send_form($form, &$form_state) {
+//  print_r($form_state);
+  $form['sms_send']['country'] = array(
+    '#type' => 'select',
+    '#title' => t('Country code'),
+    '#options' => my_twilio_country_codes(),
+  );
+  $form['sms_send']['number'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Phone Number'),
+    '#description' => t('The number to send your message to. Include all numbers except the country code'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send SMS'),
+  );
+  return $form;
+}
+
+function my_twilio_auth_code_form($form, $form_state) {
+  $form['sms_code']['code'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('SMS code'),
+    '#description' => t('The code you received via SMS'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Verify'),
+  );
+  return $form;
+}
+
+/** VALIDATE **/
+function my_twilio_auth_form_validate($form, &$form_state) {
+   switch ($form_state['sms_authentication']) {
+    case 'sms_send':
+      return my_twilio_auth_send_validate($form, $form_state);
+      break;
+    case 'sms_code':
+      return my_twilio_auth_code_validate($form, $form_state);
+      break;
+     default:
+       return FALSE;
+  }
+}
+function my_twilio_auth_send_validate($form, &$form_state) {
+  if (!is_numeric($form_state['values']['number'])) {
+    form_set_error('number', t('You must enter a phone number'));
+  }
+}
+function my_twilio_auth_code_validate($form, &$form_state) {
+  if (!is_numeric($form_state['values']['code'])) {
+    form_set_error('number', t('You must enter a valid numeric code'));
+  }
+}
+
+/** SUBMIT **/
+function my_twilio_auth_form_submit($form, &$form_state) {
+//  var_dump($form_state);
+  switch ($form_state['sms_authentication']) {
+    case 'sms_code':
+      $form_state['multistep_values']['sms_code'] = $form_state['values'];
+        my_twilio_auth_code_form_submit($form, $form_state);
+      break;
+    case 'sms_send':
+      $form_state['multistep_values']['sms_send'] = $form_state['values'];
+      $form_state['multistep_values']['sms_send']['message'] = rand(1000, 9999);
+      $form_state['new_stage'] = my_twilio_auth_send_submit($form, $form_state);
+      break;
+  }
+
+  if (isset($form_state['multistep_values']['form_build_id'])) {
+    $form_state['values']['form_build_id'] = $form_state['multistep_values']['form_build_id'];
+  }
+
+  $form_state['multistep_values']['form_build_id'] = $form_state['values']['form_build_id'];
+  $form_state['sms_authentication'] = $form_state['new_stage'];
+  $form_state['rebuild'] = TRUE;
+}
+
+function my_twilio_auth_send_submit($form, &$form_state) {
+  var_dump($form_state);
+  if ($form_state['sms_authentication'] !== 'sms_send') return FALSE;
+
+  $sent = my_twilio_send(
+    $form_state['multistep_values']['sms_send']['number'],
+    $form_state['multistep_values']['sms_send']['message'],
+    $form_state['multistep_values']['sms_send']['country']
+  );
+
+  if ($sent) {
+    drupal_set_message(t('Your message has been sent'));
+  }
+  else {
+    drupal_set_message(t('Unable to send your message.'), 'error');
+  }
+
+  return 'sms_code';
+}
+
+function my_twilio_auth_code_form_submit($form, &$form_state) {
+  $uid = arg(3);
+  $aa = ['uid' => $uid];
+
+//  var_dump($form_state);
+  $multstep_values = $form_state['multistep_values'];
+
+  if ($multstep_values['sms_send']['message'] === $multstep_values['sms_code']['code']) {
+//    print_r('ideeeeeeeeeeeeeeeeee');
+
+    //@TODO
+    user_login_submit(array(), $aa);
+  }
+}

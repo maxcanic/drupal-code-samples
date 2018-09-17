@@ -1,0 +1,4 @@
+name = Visit Hasselt General
+description = Module which provides small gluecode, tweaks,.. only for Visit Hasselt
+core = 7.x
+package = Helics

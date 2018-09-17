@@ -1,0 +1,396 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+
+function multistepform_menu() {
+  $items['multistepform'] = array(
+    'title' => 'Form API custom',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access content'),
+    'page callback' => 'drupal_get_form',
+    'access callback' => TRUE,
+    'page arguments'=>array('multistepform')
+  );
+
+  return $items;
+}
+
+function multistepform($form, &$form_state)
+{
+
+  if ($form_state['rebuild']) {
+    $form_state['input'] = array();
+  }
+
+  //get the current step
+  $step = isset($form_state['storage']['step']) ? $form_state['storage']['step'] : 1;
+  //make sure we set an initial value
+  $form_state['storage']['step'] = $step;
+
+  if($step == 1) {
+    //return the form elements for step one
+    return multistepform_1($form, $form_state);
+  }
+  elseif($step == 2) {
+    //return the form elements for step two
+    return multistepform_2($form, $form_state);
+  }
+  else {
+    //return the form elements for the final step
+    return multistepform_3($form, $form_state);
+  }
+}
+
+//process the form when it is submitted
+function multistepform_submit($form, &$form_state){
+
+  //get the current step. In multi_step_form we set the initial
+  //value to 1. We will increment and decrement this value for each
+  //for step.
+  $currentStep = $form_state['storage']['step'];
+
+  if($currentStep == 1){
+    //process the submitted data for step 1
+    multistepform_1_submit_handler($form, $form_state);
+  }else if($currentStep == 2){
+    //process the submitted data for step 2
+    multistepform_2_submit_handler($form, $form_state);
+  }else {
+    //process the submitted data for the final step
+    multistepform_3_submit_handler($form, $form_state);
+  }
+}
+
+//Build and return the form for STEP #1
+function multistepform_1($form, &$form_state){
+  //simple field for the firstname
+  $form['firstname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('First Name'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+
+  $form['lastname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Last Name'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+
+  //check we have a value in the storage for firstname, if we do populate the field with it
+  if(isset($form_state['storage'])) {
+    $form['firstname']['#default_value'] = isset($form_state['storage']['firstname']) ? $form_state['storage']['firstname'] : '';
+    $form['lastname']['#default_value'] = isset($form_state['storage']['lastname']) ? $form_state['storage']['lastname'] : '';
+  }
+
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Next');
+  return $form;
+}
+
+//A function to process STEP #1
+//we wil manually call this form to process step 1
+function multistepform_1_submit_handler($form, &$form_state){
+  if($form_state['storage']['step'] <  3 ) {
+    //we still have more steps in the form so we set rebuilt to true.
+    //this will carry the submitted data along when the form reloads
+    $form_state['rebuild'] = TRUE;
+    //increment the step, so that it's value will be #2 when the form reloads
+    $form_state['storage']['step']++;
+    //store the submitted data in the storage
+    $form_state['storage']['firstname'] = $form_state['values']['firstname'];
+    $form_state['storage']['lastname'] = $form_state['values']['lastname'];
+  }
+}
+
+
+//helper function for getting the region taxonomy
+function multistepform_get_regions_helper_function(){
+  $options = array();
+  $vid = taxonomy_vocabulary_machine_name_load('countries')->vid;
+  $options_source = taxonomy_get_tree($vid);
+
+  foreach($options_source as $item ) {
+    if($item -> depth == 0){
+      $key = $item->tid;
+      $value = $item->name;
+      $options[$key] = $value;
+    }
+  }
+  return $options;
+}
+
+//helper function for getting the region taxonomy
+function multistepform_get_countries_helper_function(){
+  $options = array();
+  $vid = taxonomy_vocabulary_machine_name_load('countries')->vid;
+  $options_source = taxonomy_get_tree($vid);
+
+  foreach($options_source as $item ) {
+    if($item -> parents[0]){
+      $key = $item->tid;
+      $value = $item->name;
+      $options[$key] = $value;
+    }
+  }
+  return $options;
+}
+
+function multistepform_2($form, &$form_state){
+
+  $form['email'] = array(
+    '#type'=>'textfield',
+    '#title'=>t('Enter your email'),
+    '#description'=>t('Your email goes here')
+  );
+
+  /*$countries = multistepform_get_countries_helper_function();*/
+
+  $form['region'] = array(
+    '#type'=>'select',
+    '#title'=>t('Select your region'),
+    '#options' => multistepform_get_regions_helper_function(),
+    '#ajax' => array(
+      'callback' => 'hello_me',
+      'wrapper' => 'my-select',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+    '#suffix' => '</div>'
+  );
+
+  $x = multistepform_get_regions_helper_function();
+
+  dpm($x);
+
+    $form['country'] = [
+      '#type' => 'select',
+      '#title' => t('Select your country'),
+      '#options' => get_countries($form_state),
+      '#states' => array(
+        'visible' => array(
+          'select[name="region"]' => array('value' => ''),
+        ),
+      ),
+      '#prefix' => '<div id="my-select">',
+      '#suffix' => '</div>'
+    ];
+
+  //if the email and region is in the store. set it as the value for the field
+  if(isset($form_state['storage'])) {
+    $form['email']['#default_value'] = isset($form_state['storage']['email']) ? $form_state['storage']['email'] : '';
+    $form['region']['#default_value'] = isset($form_state['storage']['region']) ? $form_state['storage']['region'] : '';
+    $form['country']['#default_value'] = isset($form_state['storage']['country']) ? $form_state['storage']['country'] : '';
+  }
+
+  $form['back'] = array(
+    '#type' => 'submit',
+    '#value' => 'Back',
+    //drupal seem to ignore #limit_validation_errors if
+    //the submit handler isn't set for the button
+    '#submit' => array('multistepform_submit'),
+    //when the user click ignore drupal will try to validate
+    //the current values in the form. We want the user to be able
+    //to go back even if they haven't field in a value. we can
+    //disable validation by setting #limit_validation_errors
+    //to empty array
+    '#limit_validation_errors' => array()
+  );
+  $form['next'] = array(
+    '#type' => 'submit',
+    '#value' => 'Next'
+  );
+  return $form;
+}
+
+
+function get_countries(&$form_state) {
+  $options = [];
+  if(!empty($form_state['values']['region'])) {
+    $vid = taxonomy_vocabulary_machine_name_load('countries')->vid;
+    $options_source = taxonomy_get_tree($vid);
+    $parent = $form_state['values']['region'];
+
+    foreach ($options_source as $item) {
+      if ($item->parents[0] !=0 && $item->parents[0] == $parent) {
+            $key = $item->tid;
+            $value = $item->name;
+            $options[$key] = $value;
+      }
+    }
+  }
+  return $options;
+}
+
+
+function hello_me($form, $form_state) {
+  return $form['country'];
+}
+
+function multistepform_2_submit_handler($form, &$form_state){
+  //we have to determine which button was pressed. The
+  //"Back" or the "Next" button.
+  if($form_state['clicked_button']['#value'] == 'Back'){
+    //"back" was clicked, decrement the current step by
+    //by 1.
+    $form_state['storage']['step']--;
+    //we want the form to be rebuilt and carry data along with it.
+    $form_state['rebuild'] = TRUE;
+    return; //exit the function
+  }
+  //next was clicked
+  if($form_state['storage']['step'] <  3) {
+    //we are not processing the final step so we want the form to be rebuilt.
+    //carry along its state information
+    $form_state['rebuild'] = TRUE;
+    $form_state['storage']['step']++;//increment the step
+    //store the submitted data in the storage
+    $form_state['storage']['email'] = $form_state['values']['email'];
+    $form_state['storage']['region'] = $form_state['values']['region'];
+    $form_state['storage']['country'] = $form_state['values']['country'];
+  }
+}
+
+
+function multistepform_3($form, &$form_state){
+  $form['age'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Age'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+  $form['back'] = array(
+    '#type' => 'submit',
+    '#value' => 'Back',
+    '#submit' => array('multistepform_submit'),
+    //prevent validation of the back button
+    '#limit_validation_errors' => array()
+  );
+
+  dpm($form_state['storage']);
+
+  $form['finish'] = array('#type' => 'submit', '#value' => 'Finish');
+  return $form;
+}
+
+
+function multistepform_3_submit_handler($form, &$form_state) {
+  global $user;
+  //if the user clicked the back button don't process the form
+  if ($form_state['clicked_button']['#value'] == 'Back') {
+    //decrement the step and rebuild the form
+    $form_state['storage']['step']--;
+    $form_state['rebuild'] = TRUE;
+    return;
+  }
+  else {
+    //if we are at this point.
+    //we have no more steps to process.
+    //get all the values we had in the storage from previous steps
+    $firstname = $form_state['storage']['firstname'];
+    $lastname = $form_state['storage']['lastname'];
+
+    $form_state['storage']['age'] = $form_state['values']['age'];
+
+    $title = $firstname . ' ' . $lastname;
+
+    $email = $form_state['storage']['email'];
+    $region = $form_state['storage']['region'];
+    $country = $form_state['storage']['country'];
+
+    $region_id = taxonomy_term_load($region);
+    $region_name = $region_id->name;
+    $country_id = taxonomy_term_load($country);
+    $country_name = $country_id->name;
+
+
+    //grab all the values that were submitted in the last step
+    $age = $form_state['values']['age'];
+
+
+    //create node with the same info
+    $node = new stdClass();
+    $node->title = $title;
+    $node->type = "user_info";
+    // Or e.g. 'en' if locale is enabled.
+    $node->language = LANGUAGE_NONE;
+    $node->uid = $user->uid;
+
+    // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+    node_object_prepare($node);
+
+    // Status is 1 or 0; published or not.
+    $node->status = 1;
+    // Promote is 1 or 0; promoted to front page or not.
+    $node->promote = 0;
+    // Comment is 0, 1, 2; 0 = disabled, 1 = read only, or 2 = read/write.
+    $node->comment = 0;
+
+
+    // Text field
+    $node->field_first_name[$node->language][]['value'] = $firstname;
+    $node->field_last_name[$node->language][]['value'] = $lastname;
+    $node->field_email[$node->language][]['value'] = $email;
+    $node->field_age[$node->language][]['value'] = $age;
+
+    // Term reference (taxonomy) field
+    $node->field_region[$node->language][0]['tid'] = $region_id->tid;
+    $node->field_country[$node->language][0]['tid'] = $country_id->tid;
+
+    /*// Entity reference field.
+    $node->field_customer_nid[$node->language][] = array(
+      'target_id' => $form_state['values']['entity id'],
+      // Default target_type is 'node', Other possible values are "user",
+      // "taxonomy_term" or other valid entity machine name.
+      'target_type' => 'node',
+    );*/
+
+
+    $node = node_submit($node); // Prepare node for saving
+    node_save($node);
+
+
+
+
+
+
+
+
+
+
+    dpm('Hi,'.$firstname . ' '. $lastname .', you have succesfully filled out my form. You are in ' . $region_name . ',' . $country_name .' with the age of ' . $age );
+
+    //we are now done.
+    //no need to rebuild
+    $form_state['rebuild'] = FALSE;
+  }
+}
+
+
+function multistepform_validate($form, $form_state) {
+
+  $currentStep = $form_state['storage']['step'];
+
+  switch ($currentStep) {
+    case '1':
+      if(empty($form_state['values']['firstname']))
+        form_set_error('name','Name cannot be empty');
+      else if(empty($form_state['values']['lastname']))
+        form_set_error('last_name','Last name cannot be empty');
+      break;
+
+    case '2':
+      if(filter_var($form_state['values']['email'], FILTER_VALIDATE_EMAIL) == false)
+        form_set_error('email','Email is not valid');
+      break;
+
+    default:
+      break;
+  }
+}
+

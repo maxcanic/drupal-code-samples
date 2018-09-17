@@ -1,0 +1,5 @@
+name: D6 export D8 import
+type: module
+description: Imports D6 data
+core: '8.x'
+package: Custom

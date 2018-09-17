@@ -1,0 +1,12 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function tfa_test_uninstall() {
+  // Remove all the twilio variables.
+  variable_del('twilio_sid');
+  variable_del('twilio_auth_token');
+  variable_del('twilio_library_path');
+  variable_del('twilio_number');
+}

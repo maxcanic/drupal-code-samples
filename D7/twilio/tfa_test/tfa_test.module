@@ -1,0 +1,320 @@
+<?php
+
+
+use Twilio\Rest\Client;
+
+/**
+ * Defined Twilio SID const
+ */
+define('TWILIO_SID', variable_get('twilio_sid', false));
+/**
+ * Defined Twilio auth Token const
+ */
+define('TWILIO_AUTH_TOKEN', variable_get('twilio_auth_token'));
+/**
+ * Defined Twilio library path const
+ */
+define('TWILIO_LIBRARY_PATH', variable_get('twilio_library_path'));
+/**
+ * Defined Twilio number const
+ */
+define('TWILIO_NUMBER', variable_get('twilio_number'));
+
+/**
+ *  Two Factor Authentication Settings Form
+ * @return mixed
+ */
+function tfa_test_admin() {
+
+  $form = array();
+
+  $form['twilio_sid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Account SID'),
+    '#default_value' => variable_get('twilio_sid', ''),
+    '#size' => 32,
+    '#description' => t("Twilio Account SID - the 34 character string beginning with AC"),
+    '#required' => TRUE,
+  );
+  $form['twilio_auth_token'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Twilio auth token'),
+    '#default_value' => variable_get('twilio_auth_token', ''),
+    '#size' => 32,
+    '#description' => t("Twilio auth token - available on your dashboard"),
+    '#required' => TRUE,
+  );
+
+  $form['twilio_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Twilio number'),
+    '#default_value' => variable_get('twilio_number', ''),
+    '#size' => 32,
+    '#description' => t("Twilio phone number"),
+    '#required' => TRUE,
+  );
+
+  $form['twilio_library_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Twilio library path'),
+    '#default_value' => variable_get('twilio_library_path', 'vendor/twilio/sdk/Twilio'),
+    '#size' => 32,
+    '#description' => t("The path to the twilio library"),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Menu items
+ * @return array
+ */
+function tfa_test_menu() {
+  $items = array();
+
+  $items['tfasms/send'] = array(
+    'title' => 'Twilio SMS test page',
+    'page callback' => 'tfa_test_page',
+    'access callback' => TRUE,
+    'menu_name' => '2FA Test',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/tfa'] = array(
+    'title' => 'Two Factor Authentication Settings',
+    'description' => 'Enter your Twilio account settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tfa_test_admin'),
+    'access arguments' => array('administer tfa settings'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Twilio send sms Test Page
+ * @return string
+ */
+function tfa_test_page() {
+
+  $result = tfa_test_send('+381691972477', 'test 23');
+
+  return '';
+}
+
+/**
+ * Twilio send sms function
+ * @param $number
+ * @param $message
+ * @return array
+ */
+function tfa_test_send($number, $message) {
+
+  // Include the PHP TwilioRest library
+  require_once DRUPAL_ROOT . '/' . TWILIO_LIBRARY_PATH . '/autoload.php';
+
+  // Instantiate a new Twilio Rest Client
+  $client = new Client(TWILIO_SID, TWILIO_AUTH_TOKEN);
+  $result = [];
+
+  try {
+    $response = $client->messages->create(
+      $number,
+      array(
+        'from' => TWILIO_NUMBER,
+        'body' => $message,
+      )
+    );
+    $result = array(
+      'status' => TRUE,
+      'data' => t('Message sent to @number', array('@number' => $number)),
+    );
+  } catch (\Twilio\Exceptions\RestException $e) {
+
+    $result = array(
+      'status' => FALSE,
+      'message' => t('An error occurred during the HTTP request: @error_code: @error.  Please see <a href="@twilio_url">the Twilio docs</a> for more information',
+        array(
+          '@error_code' => $e->getCode(),
+          '@error' => $e->getMessage(),
+          '@twilio_url' => 'https://www.twilio.com/docs/api/rest/message#error-values'
+        )
+      ),
+    );
+
+    drupal_set_message($result['message']);
+
+    watchdog('tfa_test', $result['message']);
+
+  } catch (\Twilio\Exceptions\EnvironmentException $e) {
+
+    $result = array(
+      'status' => FALSE,
+      'message' => t('An error occurred during the HTTP request: @error_code: @error.  Please see <a href="@twilio_url">the Twilio docs</a> for more information',
+        array(
+          '@error_code' => $e->getCode(),
+          '@error' => $e->getMessage(),
+          '@twilio_url' => 'https://www.twilio.com/docs/api/rest/message#error-values'
+        )
+      ),
+    );
+  }
+
+  return $result;
+}
+
+/**
+ * Check if $form_id = user_login and if TWILIO_SID in settings form is set
+ * and proceed with Two Factor Authentication
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function tfa_test_form_alter(&$form, &$form_state, $form_id) {
+
+  if (($form_id == 'user_login' || $form_id == 'user_login_block' )&& TWILIO_SID) {
+
+    //Set $form_state['step']
+    $form_state['step'] = isset($form_state['step']) ? $form_state['step'] : 1;
+
+    if (isset($form_state['input']['name']) && isset($form_state['input']['pass']) || isset($form_state['uid'])) {
+
+      //Use custom submit function
+      $form['actions']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Login'),
+        '#submit' => array('tfa_test_submit'),
+      );
+
+      //Change step if $form_state['uid'] exist to step 2
+      if (!empty($form_state['uid'])) {
+
+        $form_state['step'] = 2;
+
+        //Remove links on block from step 2
+        $form['links']['#markup'] = '';
+
+        //Remove name and pass from step 2
+        $form['name']['#access'] = FALSE;
+        $form['pass']['#access'] = FALSE;
+
+        //If it's enterend phone number change step to step 3
+        if (isset($form_state['values']['sms_number'])) {
+          $form_state['step'] = 3;
+        }
+      }
+
+    }
+
+    //Switch form with change in form_state['step]
+    switch ($form_state['step']) {
+      case 2:
+
+        $form['sms_number'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Please enter your phone number'),
+          '#default_value' => variable_get('sms_number', ''),
+          '#size' => 60,
+          '#required' => true,
+          '#description' => t("Enter your phone number to verify that you are human - 2 Factor Authentication"),
+        );
+
+        $form['actions']['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Next'),
+          '#submit' => array('tfa_test_submit'),
+        );
+
+        break;
+
+      case 3:
+
+        $form['verification_code'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Please enter your TFA verification code here'),
+          '#default_value' => variable_get('verification_code', ''),
+          '#size' => 60,
+          '#description' => t("Enter your verification code - 2 Factor Authentication"),
+          '#required' => TRUE,
+        );
+        $form['actions']['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Verify'),
+          '#submit' => array('tfa_test_submit'),
+        );
+
+        break;
+    }
+
+    $form['#submit'] = array('tfa_test_submit');
+  }
+}
+
+/**
+ * Custom submit function
+ * @param $form
+ * @param $form_state
+ */
+function tfa_test_submit($form, &$form_state) {
+
+  switch ($form_state['step']) {
+
+    case 2:
+
+      tfa_test_enter_number($form, $form_state);
+
+      break;
+    case 3:
+
+      tfa_test_verify_number($form, $form_state);
+
+      break;
+    case 1:
+    default:
+      $form_state['rebuild'] = true;
+      break;
+  }
+}
+
+/**
+ * Stores sms_number and create verification code
+ * then uses them to send verification code to entered phone number
+ * @param $form
+ * @param $form_state
+ */
+function tfa_test_enter_number($form, &$form_state) {
+
+  $no = $form_state['values']['sms_number'];
+
+  $number = str_replace("+", "", $no);
+
+
+  $verification_no = rand(11111, 99999);
+
+  $form_state['storage']['random_no'] = $verification_no;
+
+  $result = tfa_test_send('+' . $number, $verification_no);
+
+  if ($result['status'] === true) {
+
+    $form_state['rebuild'] = true;
+  }
+}
+
+/**
+ * Verifies that verification code send to phone number and generated random number are the same
+ * @param $form
+ * @param $form_state
+ */
+function tfa_test_verify_number($form, &$form_state) {
+
+  if ($form_state['values']['verification_code'] == $form_state['storage']['random_no']) {
+
+    user_login_submit($form, $form_state);
+
+  } else {
+    drupal_set_message(t('Verification error. Code doesn\'t match.'), 'error');
+  }
+}

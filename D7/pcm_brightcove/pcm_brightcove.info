@@ -1,0 +1,4 @@
+name = pcm brightcove custom theme
+description = Module providing custom template for brightcove player.
+core = 7.x
+package = Custom

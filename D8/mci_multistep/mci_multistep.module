@@ -1,0 +1,15 @@
+<?php
+/*
+ * @file
+ * code for mci multistep module
+*/
+function mci_multistep_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+
+  if ($form_id == 'user_login_form') {
+    //if (($form_state->has('page_num'))&&($form_state->get('page_num') == 1)) {
+
+   // }
+  }
+}
+
+

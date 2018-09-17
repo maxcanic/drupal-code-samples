@@ -1,0 +1,15 @@
+export_d6:
+  path: '/export-d6'
+  defaults:
+    _controller: '\Drupal\export_d6\Controller\Export_d6Controller::content'
+    _title: 'Export D6'
+  requirements:
+    _permission: 'access content'
+
+export_d6.form:
+  path: '/import-form'
+  defaults:
+    _title: 'Import form'
+    _form: '\Drupal\export_d6\Plugin\Form\ImportForm'
+  requirements:
+    _permission: 'access content'

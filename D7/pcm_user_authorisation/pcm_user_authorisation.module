@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * @file
+ * Provides anonymous users access to site pages after accepting terms and conditions.
+ */
+
+define('PCM_USER_AUTHORISATION_COOKIE', 'pcm_user_access');
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function pcm_user_authorisation_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function pcm_user_authorisation_theme($existing, $type, $theme, $path) {
+  return array(
+    'user_authentication' => array(
+      'variables' => array('accept' => NULL, 'decline' => NULL),
+      'template' => 'user-authentication',
+      'path' => $path . '/templates',
+    )
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function pcm_user_authorisation_menu() {
+  $items['admin/config/system/user_authorisation'] = array(
+    'title' => 'Pages visible to anonymous users',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('pcm_user_authorisation_admin_settings'),
+    'access arguments' => array('administer content'),
+    'file' => 'pcm_user_authorisation.admin.inc'
+  );
+
+  return $items;
+}
+
+/**
+ * Check access, return true if the page may be visited by anon users.
+ */
+function _pcm_user_authorisation_check_access() {
+  // Redirect destination if cookie is set.
+  if (isset($_COOKIE[PCM_USER_AUTHORISATION_COOKIE])) {
+    return TRUE;
+  }
+
+  // Check for exceptions.
+  $pattern = variable_get('pcm_user_authorisation', '');
+
+  $path = drupal_strtolower(drupal_get_path_alias(current_path()));
+
+  return !drupal_match_path($path, $pattern);
+}
+
+/**
+ * If token is not set user will be redirected to front page if he tries to access other pages through url.
+ */
+function pcm_user_authorisation_page_build(&$page) {
+
+  $destination = '<front>';
+
+  $access = _pcm_user_authorisation_check_access();
+
+  if (!$access) {
+    drupal_goto($destination);
+  }
+}
+

@@ -1,0 +1,7 @@
+name = My Twilio
+description = Send messages with Twilio cloud communication service from Drupal
+core = 7.x
+package = My Twilio
+;dependencies[] = libraries
+
+

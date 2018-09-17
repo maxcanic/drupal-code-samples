@@ -1,0 +1,7 @@
+mci_multistep.form:
+ path: '/form'
+ defaults:
+   _title: 'Multistep form'
+   _form: '\Drupal\mci_multistep\Form\MciMultistep'
+ requirements:
+   _permission: 'access content'

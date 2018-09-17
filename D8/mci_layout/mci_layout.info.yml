@@ -1,0 +1,5 @@
+name: MCI layout
+description: Module for testing Drupal 8 layout api.
+core: 8.x
+package: Custom
+type: module

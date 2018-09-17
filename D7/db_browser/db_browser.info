@@ -1,0 +1,6 @@
+name = DB Browser
+description = "DB Browser."
+package = Development
+core = 7.x
+
+author = .pex

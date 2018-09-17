@@ -1,0 +1,55 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ */
+function db_browser_menu() {
+  $items['admin/config/db-browser'] = array(
+    'title' => 'DB Browser',
+    'page callback' => 'db_browser_page',
+    'access arguments' => array('db_browser browse'),
+    'file' => 'db_browser.admin.inc',
+  );
+
+  $items['admin/config/db-browser/%_table_name'] = array(
+    'title' => 'DB Browser',
+    'page callback' => 'db_browser_table_page',
+    'page arguments' => array(3),
+    'access arguments' => array('db_browser browse'),
+    'file' => 'db_browser.admin.inc',
+  );
+
+  $items['admin/config/db-browser/%_table_name/%ctools_js/view/%/%'] = array(
+    'title' => 'DB Browser',
+    'page callback' => 'db_browser_view_blob',
+    'page arguments' => array(3, 4, 6, 7),
+    'access arguments' => array('db_browser browse'),
+    'file' => 'db_browser.admin.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_permission().
+ * @return array
+ */
+function db_browser_permission() {
+  return array(
+    'db_browser browse' => array(
+      'title' => t('DB Browser Browse'),
+      'description' => t('Browse database'),
+    ),
+  );
+}
+
+/**
+ * Menu loader
+ * @param $table_name
+ * @return array|bool|mixed|SchemaCache
+ */
+function _table_name_load($table_name) {
+  return drupal_get_schema($table_name);
+}

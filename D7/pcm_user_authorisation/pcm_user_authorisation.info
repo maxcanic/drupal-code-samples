@@ -1,0 +1,4 @@
+name = pcm user authorisation
+description = Module providing authorisation of anonymous users to access pages.
+core = 7.x
+package = Custom

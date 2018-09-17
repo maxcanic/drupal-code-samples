@@ -1,0 +1,5 @@
+name = ZNA field event options
+description = Module for custom field event options
+package = ZNA
+core = 7.x
+dependencies[] = field

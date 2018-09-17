@@ -1,0 +1,436 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function visithasselt_general_install() {
+  visithasselt_general_update_();
+}
+
+function visithasselt_general_schema() {
+  $schema = array();
+  $schema['meeting_places_node'] = array(
+    'description' => 'The base table for nodes.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'place_id' => array(
+        'description' => '',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'updated' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0
+      ),
+    ),
+    'primary key' => array(
+      'nid',
+    ),
+  );
+  $schema['meeting_places_emails'] = array(
+    'description' => 'Table for meetng place sent mails.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'node id.',
+        'type' => 'int',
+        'default' => 0,
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => '',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'date' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+      ),
+    ),
+    'primary key' => array(
+      'id',
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'created' => array('date'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * enable uit-in-hasselt_in-de-kijker feature & features override
+ */
+function visithasselt_general_update_7001() {
+  //enable modules
+  $module_list = array(
+    'features_override',
+    'visit_hasselt_in_de_kijker'
+  );
+  module_enable($module_list);
+}
+
+/**
+ * Enable visithasselt landings page feature
+ */
+function visithasselt_general_update_7002() {
+  module_enable(array('landings_page'));
+}
+
+/**
+ * Set i18n variables for VisitHasselt
+ */
+function visithasselt_general_update_7003() {
+  $enable_variables = array(
+    'newsletter_block_body',
+    'header_image_alt',
+    'header_image_title',
+    'footer_copyright',
+  );
+
+  $enabled_variables = variable_get('variable_realm_list_language');
+  foreach ($enable_variables as $value) {
+    if (!in_array($value, $enabled_variables)) {
+      $enabled_variables[] = $value;
+    }
+  }
+  variable_set('variable_realm_list_language', $enabled_variables);
+}
+
+/**
+ * Migrate data from in_de_kijker field to in_de_kijker_12 and delete in_de_kijker instance from landings_page
+ */
+function visithasselt_general_update_7004() {
+  $nodes = node_load_multiple(array(), array('type' => 'landings_page'));
+
+  foreach ($nodes as $node) {
+    $node->field_in_de_kijker_max_12[LANGUAGE_NONE][0]['target_id'] = $node->field_in_de_kijker[LANGUAGE_NONE][0]['target_id'];
+    node_save($node);
+  }
+
+  if ($instance = field_info_instance('node', 'field_in_de_kijker', 'landings_page')) {
+    field_delete_instance($instance);
+  }
+}
+
+/**
+ * Add German and French language
+ */
+function visithasselt_general_update_7005() {
+  locale_add_language('de', 'German', 'DE', LANGUAGE_LTR, '', 'de', TRUE, FALSE);
+  locale_add_language('fr', 'French', 'FR', LANGUAGE_LTR, '', 'fr', TRUE, FALSE);
+}
+
+/**
+ * Enable nieuwsberichten_overrides feature
+ */
+function visithasselt_general_update_7006() {
+  module_enable(array('nieuwsberichten_overrides'));
+}
+
+/**
+ * Enable visit_hasselt_overrides
+ */
+function visithasselt_general_update_7008() {
+  module_enable(array('visit_hasselt_overrides'));
+}
+
+/**
+ * Remove blocks from header
+ */
+function visithasselt_general_update_7009() {
+  db_update('block')
+    ->fields(array('status' => 0, 'region' => -1))
+    ->condition('module', 'visithasselt_general', '=')
+    ->condition('theme', 'visithasselt_be_theme', '=')
+    ->condition('delta', 'header_image', '=')
+    ->execute();
+
+  db_update('block')
+    ->fields(array('status' => 0, 'region' => -1))
+    ->condition('module', 'system', '=')
+    ->condition('theme', 'visithasselt_be_theme', '=')
+    ->condition('delta', 'main-menu', '=')
+    ->execute();
+
+  db_update('block')
+    ->fields(array('status' => 0, 'region' => -1))
+    ->condition('module', 'facetapi', '=')
+    ->condition('theme', 'visithasselt_be_theme', '=')
+    ->execute();
+}
+
+/**
+ * Enable feature for side wide notification
+ */
+function visithasselt_general_update_7010() {
+  $module_list = array('side_wide_notifications');
+  module_enable($module_list);
+}
+
+/**
+ * Set region for Search blok to new search region
+ */
+function visithasselt_general_update_7011() {
+  db_update('block')
+    ->fields(array('region' => 'search'))
+    ->condition('module', 'search', '=')
+    ->condition('delta', 'form', '=')
+    ->condition('theme', 'visithasselt_be_theme', '=')
+    ->execute();
+}
+
+/**
+ * Update show_contactblok_anchor field for existing content.
+ */
+function visithasselt_general_update_7012(){
+  db_truncate('field_data_field_show_contactblok_anchor')->execute();
+  db_truncate('field_revision_field_show_contactblok_anchor')->execute();
+  $pages = db_query("SELECT nid, vid, type FROM {node} WHERE type IN ('page', 'taakpagina')")->fetchAllAssoc('nid');
+  foreach ($pages as $nid => $values) {
+    $fields = array(
+      'entity_type' => 'node',
+      'bundle' => $values->type,
+      'deleted' => 0,
+      'entity_id' => $values->nid,
+      'revision_id' => $values->vid,
+      'language' => LANGUAGE_NONE,
+      'delta' => 0,
+      'field_show_contactblok_anchor_value' => 1,
+    );
+    db_insert('field_data_field_show_contactblok_anchor')
+      ->fields($fields)
+      ->execute();
+    db_insert('field_revision_field_show_contactblok_anchor')
+      ->fields($fields)
+      ->execute();
+  }
+}
+
+/**
+ * Change region for newsletter
+ */
+function visithasselt_general_update_7013() {
+  db_update('block')
+    ->fields(array('status' => 0, 'region' => -1))
+    ->condition('region', 'footer', '=')
+    ->condition('delta', 'newsletter_block', '=')
+    ->execute();
+  db_update('block')
+    ->fields(array('region' => 'newsletter', 'status' => 1, 'weight' => 0))
+    ->condition('module', 'visithasselt_general', '=')
+    ->condition('delta', 'newsletter_block', '=')
+    ->condition('theme', 'visithasselt_be_theme', '=')
+    ->execute();
+}
+
+/**
+ * Add disabled menu link for stadsplan
+ */
+function visithasselt_general_update_7014() {
+  $item = array(
+    'link_path' => 'stadsplan',
+    'link_title' => 'Stadsplan',
+    'menu_name' => 'main-menu',
+    'hidden' => 1,
+  );
+  menu_link_save($item);
+  menu_cache_clear_all();
+}
+
+/**
+ * Enable feature externe_link
+ */
+function visithasselt_general_update_7015() {
+  module_enable(array('externe_link'));
+}
+
+/**
+ * Disable google analytics module and it's sub modules
+ */
+function visithasselt_general_update_7016() {
+  $module_list = array(
+    'google_analytics',
+    'google_analytics_counter',
+    'google_analytics_reports',
+  );
+  module_disable($module_list);
+}
+
+/**
+ * Update translations
+ */
+function visithasselt_general_update_7017() {
+  $languages = language_list();
+  require_once DRUPAL_ROOT . '/includes/locale.inc';
+
+  foreach ($languages as $langcode => $language) {
+    if ($langcode !== 'en') {
+      $module_root = drupal_get_path('module', 'visithasselt_general');
+// make a new $file object
+      $file = new stdClass();
+      $file->filename = $langcode . '.po';
+      $file->uri = $module_root . '/translations/' . $file->filename;
+      $file->filemime = 'application/octet-stream';
+// import the .po-file, use OVERWRITE, with KEEP only new translations are imported
+      $success = _locale_import_po($file, $langcode, LOCALE_IMPORT_OVERWRITE, 'default');
+    }
+  }
+
+  return $success;
+}
+/**
+ * Enable google tag manager for visit hasselt
+ */
+function visithasselt_general_update_7018() {
+  $module_list = array(
+    'google_tag'
+  );
+  module_enable($module_list);
+}
+
+/**
+ * set google tag manager id for visit hasselt
+ */
+function visithasselt_general_update_7019() {
+variable_set('google_tag_container_id', 'GTM-NKPK6Q');
+}
+
+/**
+ * Enable google tag manager for visit hasselt
+ */
+function visithasselt_general_update_7020() {
+  $module_list = array(
+    'visit_hasselt_vademecum'
+  );
+  module_enable($module_list);
+}
+
+/**
+ * Migrate field_header_title content to field_header_slogan field
+ */
+function visithasselt_general_update_7021() {
+  $type = "landings_page";
+  $nodes = node_load_multiple(array(), array('type' => $type));
+
+  foreach ($nodes as $node) {
+    if (isset($node->field_header_title) && !empty($node->field_header_title)) {
+      if (isset($node->field_header_slogan)) {
+        $node->field_header_slogan[LANGUAGE_NONE][0]['value'] = $node->field_header_title[LANGUAGE_NONE][0]['value'];
+        $node->field_header_slogan[LANGUAGE_NONE][0]['safe_value'] = $node->field_header_title[LANGUAGE_NONE][0]['safe_value'];
+        node_save($node);
+      }
+    }
+  }
+}
+
+/**
+ * Delete field instance field_header_title from landings_page
+ */
+function visithasselt_general_update_7022() {
+  if ($instance = field_info_instance('node', 'field_header_title', 'landings_page')) {
+    field_delete_instance($instance);
+  }
+}
+/**
+ * Place footer_hasselt_sites_logos block in region
+ */
+function visithasselt_general_update_7023() {
+  _block_rehash('visithasselt_be_theme');
+
+  db_merge('block')
+    ->key(array(
+      'theme' => 'visithasselt_be_theme',
+      'delta' => 'footer_hasselt_sites_logos',
+      'module' => 'visithasselt_general'
+    ))
+    ->fields(array(
+      'region' => 'footer',
+      'status' => 1,
+      'weight' => 10,
+    ))
+    ->execute();
+}
+
+/**
+ * Enable modules for instagram feed.
+ */
+function visithasselt_general_update_7024() {
+  $modules = array('instagram_social_feed', 'feature_instagram_social_feed');
+  module_enable($modules);
+}
+
+/**
+ * Disable devel module.
+ */
+function visithasselt_general_update_7025(&$sandbox) {
+  if( module_exists('devel')) {
+    module_disable(array('devel'));
+  }
+}
+
+/**
+ * Enable hide_submit
+ */
+function visithasselt_general_update_7026() {
+  module_enable(array('hide_submit'));
+}
+
+/**
+ * Set EU Cookie Compliance variable in EN
+ */
+function visithasselt_general_update_7027() {
+  $eu_cookie_compliance_en = variable_get('eu_cookie_compliance_en');
+  $eu_cookie_compliance_en['popup_info']['value'] = '<h2>We use cookies to enhance the browsing experience on visithasselt.be. If you visit our website, you accept these cookies.</h2>';
+  $eu_cookie_compliance_en['popup_agreed']['value'] = '<h2>Thank you for accepting cookies</h2>
+
+<p>You can now hide this message or find out more about cookies.</p>';
+  variable_set('eu_cookie_compliance_en', $eu_cookie_compliance_en);
+}
+
+/**
+ * Create new table meeting_places_node
+ */
+function visithasselt_general_update_7028() {
+  if(db_table_exists('meeting_places_node') == FALSE) {
+    $schema = drupal_get_schema_unprocessed('visithasselt_general');
+
+    db_create_table('meeting_places_node', $schema['meeting_places_node']);
+  }
+}
+
+function visithasselt_general_update_7029() {
+  $features = array(
+    'meeting_place',
+    'meeting_places_view',
+  );
+
+  // Enable the modules by name.
+  module_enable($features);
+}
+
+function visithasselt_general_update_7030() {
+  if(db_table_exists('meeting_places_emails') == FALSE) {
+    $schema = drupal_get_schema_unprocessed('visithasselt_general');
+
+    db_create_table('meeting_places_emails', $schema['meeting_places_emails']);
+  }
+}

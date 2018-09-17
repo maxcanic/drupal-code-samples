@@ -1,0 +1,13 @@
+<?php
+
+// Replace "MY_MODULE_OR_THEME" with the machine name of your module or theme.
+function mci_layout_theme() {
+  return [
+    'advanced_layout_1' => [
+      'template' => 'templates/advanced-layout-1',
+      // layout_plugin expects the theme hook to be declared with this:
+      'render element' => 'content',
+
+    ],
+  ];
+}

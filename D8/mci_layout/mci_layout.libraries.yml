@@ -1,0 +1,9 @@
+advanced-layout-library:
+  version: 1.x
+  css:
+    theme:
+      css/advanced-layout-library.css: {}
+  js:
+    js/advanced-layout-library.js: {}
+  dependencies:
+    - core/jquery

@@ -1,0 +1,1505 @@
+<?php
+
+/**
+ * Implements hook_block_info().
+ */
+function visithasselt_general_block_info() {
+  $blocks = array();
+  $blocks['newsletter_block'] = array(
+    'info' => t('Newsletter Block'),
+    'region' => 'footer',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['homepage_social_media'] = array(
+    'info' => t('Homepage social media'),
+    'region' => 'footer',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['header_image'] = array(
+    'info' => t('Header image'),
+    'region' => 'header',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['footer_contactblock'] = array(
+    'info' => t('Footer contact block'),
+    'region' => 'footer',
+    'cache' => DRUPAL_CACHE_PER_PAGE,
+  );
+  $blocks['footer_copyright'] = array(
+    'info' => t('Footer copyright block'),
+    'region' => 'footer',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['side_wide_notification'] = array(
+    'info' => t('Side wide notification'),
+    'region' => 'content',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['footer_hasselt_sites_logos'] = array(
+    'info' => t('Footer Hasselt sites logos'),
+    'region' => 'content',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['ocmw_newsletter_block'] = array(
+    'info' => t('OCMW Newsletter block'),
+    'region' => 'newsletter',
+    'status' => 1,
+    'weight' => 0,
+    'cache' => DRUPAL_CACHE_GLOBAL,
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function visithasselt_general_block_configure($delta = '') {
+  global $language;
+
+  $form = array();
+
+  switch ($delta) {
+    case 'header_image':
+      $form['header_image'] = array(
+        '#title' => t('Default header image'),
+        '#type' => 'managed_file',
+        '#description' => t('The uploaded image will be displayed in the header when not on a node, or when no header image was set on the current node.'),
+        '#default_value' => variable_get('header_image',''),
+        '#upload_location' => 'public://',
+        '#required' => TRUE,
+      );
+      $form['header_image_alt'] = array(
+        '#title' => t('Default Header image alt text'),
+        '#type' => 'textfield',
+        '#description' => t('Default Alt text for the header image.'),
+        '#default_value' => i18n_variable_get('header_image_alt', $language->language,''),
+        '#size' => 60,
+        '#maxlength' => 128,
+        '#required' => TRUE,
+      );
+      $form['header_title'] = array(
+        '#title' => t('Default Header title'),
+        '#type' => 'textfield',
+        '#description' => t('Default title text for the header image.'),
+        '#default_value' => i18n_variable_get('header_image_title', $language->language,''),
+        '#size' => 60,
+        '#maxlength' => 128,
+        '#required' => FALSE,
+      );
+      break;
+    case 'footer_contactblock':
+      //footer contactblock group
+      $form['footer_contactblock'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Footer contactblok'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      //NL
+      //form element to input the toerisme node id
+      $form['footer_contactblock']['find_contactfiche_nl'] = array(
+        '#title' => t('Footer contactfiche NL'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_nl', "nl"),
+      );
+      //FR
+      //form element to input the toerisme node id
+      $form['footer_contactblock']['find_contactfiche_fr'] = array(
+        '#title' => t('Footer contactfiche FR'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_fr', "fr"),
+      );
+      //EN
+      //form element to input the toerisme node id
+      $form['footer_contactblock']['find_contactfiche_en'] = array(
+        '#title' => t('Footer contactfiche EN'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_en', "en"),
+      );
+      //DE
+      //form element to input the toerisme node id
+      $form['footer_contactblock']['find_contactfiche_de'] = array(
+        '#title' => t('Footer contactfiche DE'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_de', "de"),
+      );
+
+      //japanse tuin group
+      $form['japanse_tuin'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Japanse Tuin'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      //NL
+      //form element to input the nl node id for de japanse tuin pagina.
+      $form['japanse_tuin']['japanse_tuin_id_nl'] = array(
+        '#title' => t('Set id for Japanse tuin landingpage NL'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_japanse_tuin_nl', "nl"),
+      );
+      //form element to input the node id for the contactfiche of the japanse tuin.
+      $form['japanse_tuin']['find_contactfiche_japanse_tuin_nl'] = array(
+        '#title' => t('Footer contactfiche for Japanse tuin NL'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_japanse_tuin_nl', "nl"),
+      );
+
+      //FR
+      //form element to input the nl node id for de japanse tuin pagina.
+      $form['japanse_tuin']['japanse_tuin_id_fr'] = array(
+        '#title' => t('Set id for Japanse tuin landingpage FR'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_japanse_tuin_fr', "fr"),
+      );
+      //form element to input the node id for the contactfiche of the japanse tuin.
+      $form['japanse_tuin']['find_contactfiche_japanse_tuin_fr'] = array(
+        '#title' => t('Footer contactfiche for Japanse tuin FR'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_japanse_tuin_fr', "fr"),
+      );
+
+      //EN
+      //form element to input the nl node id for de japanse tuin pagina.
+      $form['japanse_tuin']['japanse_tuin_id_en'] = array(
+        '#title' => t('Set id for Japanse tuin landingpage EN'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_japanse_tuin_en', "en"),
+      );
+      //form element to input the node id for the contactfiche of the japanse tuin.
+      $form['japanse_tuin']['find_contactfiche_japanse_tuin_en'] = array(
+        '#title' => t('Footer contactfiche for Japanse tuin EN'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_japanse_tuin_en', "en"),
+      );
+
+      //DE
+      //form element to input the nl node id for de japanse tuin pagina.
+      $form['japanse_tuin']['japanse_tuin_id_de'] = array(
+        '#title' => t('Set id for Japanse tuin landingpage DE'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_japanse_tuin_de', "de"),
+      );
+      //form element to input the node id for the contactfiche of the japanse tuin.
+      $form['japanse_tuin']['find_contactfiche_japanse_tuin_de'] = array(
+        '#title' => t('Footer contactfiche for Japanse tuin DE'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_japanse_tuin_de', "de"),
+      );
+
+      //tournee locale group
+      $form['tournee_locale'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Tournee locale'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      //NL
+      //form element to input the nl node id for de tournee locale pagina.
+      $form['tournee_locale']['tournee_locale_id_nl'] = array(
+        '#title' => t('Set id for Tournee locale landingpage NL'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_tournee_locale_nl', "nl"),
+      );
+      //form element to input the node id for the contactfiche of the tournee locale.
+      $form['tournee_locale']['find_contactfiche_tournee_locale_nl'] = array(
+        '#title' => t('Footer contactfiche for Tournee locale NL'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_tournee_locale_nl', "nl"),
+      );
+
+      //FR
+      //form element to input the nl node id for de tournee locale pagina.
+      $form['tournee_locale']['tournee_locale_id_fr'] = array(
+        '#title' => t('Set id for Tournee locale landingpage FR'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_tournee_locale_fr', "fr"),
+      );
+      //form element to input the node id for the contactfiche of the tournee locale.
+      $form['tournee_locale']['find_contactfiche_tournee_locale_fr'] = array(
+        '#title' => t('Footer contactfiche for Tournee locale FR'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_tournee_locale_fr', "fr"),
+      );
+
+      //EN
+      //form element to input the nl node id for de tournee locale pagina.
+      $form['tournee_locale']['tournee_locale_id_en'] = array(
+        '#title' => t('Set id for Tournee locale landingpage EN'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_tournee_locale_en', "en"),
+      );
+      //form element to input the node id for the contactfiche of the tournee locale.
+      $form['tournee_locale']['find_contactfiche_tournee_locale_en'] = array(
+        '#title' => t('Footer contactfiche for Tournee locale EN'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_tournee_locale_en', "en"),
+      );
+
+      //DE
+      //form element to input the nl node id for de tournee locale pagina.
+      $form['tournee_locale']['tournee_locale_id_de'] = array(
+        '#title' => t('Set id for Tournee locale landingpage DE'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_tournee_locale_de', "de"),
+      );
+      //form element to input the node id for the contactfiche of the tournee locale.
+      $form['tournee_locale']['find_contactfiche_tournee_locale_de'] = array(
+        '#title' => t('Footer contactfiche for Tournee locale DE'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_tournee_locale_de', "de"),
+      );
+      //meetinhasselt group
+      $form['meetinhasselt'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Meetinhasselt'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      //NL
+      //form element to input the nl node id for de meetinhasselt pagina.
+      $form['meetinhasselt']['meetinhasselt_id_nl'] = array(
+        '#title' => t('Set id for Meetinhasselt landingpage NL'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_meetinhasselt_nl', "nl"),
+      );
+      //form element to input the node id for the contactfiche of the Meetinhasselt.
+      $form['meetinhasselt']['find_contactfiche_meetinhasselt_nl'] = array(
+        '#title' => t('Footer contactfiche for Meetinhasselt NL'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_meetinhasselt_nl', "nl"),
+      );
+
+      //FR
+      //form element to input the nl node id for de meetinhasselt pagina.
+      $form['meetinhasselt']['meetinhasselt_id_fr'] = array(
+        '#title' => t('Set id for Meetinhasselt landingpage FR'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_meetinhasselt_fr', "fr"),
+      );
+      //form element to input the node id for the contactfiche of the meetinhasselt.
+      $form['meetinhasselt']['find_contactfiche_meetinhasselt_fr'] = array(
+        '#title' => t('Footer contactfiche for Meetinhasselt FR'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_meetinhasselt_fr', "fr"),
+      );
+
+      //EN
+      //form element to input the nl node id for de meetinhasselt pagina.
+      $form['meetinhasselt']['meetinhasselt_id_en'] = array(
+        '#title' => t('Set id for Meetinhasselt landingpage EN'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_meetinhasselt_en', "en"),
+      );
+      //form element to input the node id for the contactfiche of the meetinhasselt.
+      $form['meetinhasselt']['find_contactfiche_meetinhasselt_en'] = array(
+        '#title' => t('Footer contactfiche for Meetinhasselt EN'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_meetinhasselt_en', "en"),
+      );
+
+      //DE
+      //form element to input the nl node id for de meetinhasselt pagina.
+      $form['meetinhasselt']['meetinhasselt_id_de'] = array(
+        '#title' => t('Set id for Meetinhasselt landingpage DE'),
+        '#type' => 'textfield',
+        '#default_value' => i18n_variable_get('nid_meetinhasselt_de', "de"),
+      );
+      //form element to input the node id for the contactfiche of the meetinhasselt.
+      $form['meetinhasselt']['find_contactfiche_meetinhasselt_de'] = array(
+        '#title' => t('Footer contactfiche for Meetinhasselt DE'),
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'contactfiche/nodes/autocomplete',
+        '#default_value' => i18n_variable_get('footer_contactblock_nid_meetinhasselt_de', "de"),
+      );
+      break;
+    case 'footer_copyright':
+      $form['footer_copyright_text'] = array(
+        '#type'          => 'text_format',
+        '#title'         => t('Enter your text here in raw format'),
+        '#default_value' => i18n_variable_get('footer_copyright', $language->language, _visithasselt_general_footer_copyright_default()),
+        '#format' => 'full_html',
+      );
+      break;
+    case 'side_wide_notification':
+      $notification = i18n_variable_get('side_wide_notification', $language->language, array());
+      $form['side_wide_notification_body'] = array(
+        '#type'          => 'textarea',
+        '#title'         => t('Body'),
+        '#default_value' => isset($notification['body']) ? $notification['body'] : NULL,
+      );
+      $form['side_wide_notification_link_container'] = array(
+        '#type' => 'container',
+        '#attributes' => array('class' => array('link')),
+        '#tree' => TRUE,
+      );
+      $form['side_wide_notification_link_container']['link'] = array(
+        '#type' => 'link_field',
+        '#title' => t('Link'),
+        '#field_name' => 'link_field',
+        '#language' => LANGUAGE_NONE,
+        '#field_parents' => array(),
+        '#delta' => 0,
+        '#default_value' => array(
+          'title' => isset($notification['link']['title'])? $notification['link']['title'] : NULL,
+          'url' => isset($notification['link']['url'])? $notification['link']['url'] : NULL,
+        ),
+      );
+      break;
+    case 'ocmw_newsletter_block':
+      $form['ocmw_newsletter_block_body'] = array(
+        '#type'          => 'text_format',
+        '#title'         => t('Enter your text here in raw format'),
+        '#default_value' => i18n_variable_get('ocmw_newsletter_block_body', $language->language, _visithasselt_general_newsletter_block_default()),
+        '#format' => 'raw',
+      );
+      break;
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function visithasselt_general_block_save($delta = '', $edit = array()) {
+  global $language;
+  switch ($delta) {
+    case 'header_image':
+      if (!empty($edit['header_image'])) {
+        // Load the file via file.fid.
+        $file = file_load($edit['header_image']);
+        // Change status to permanent.
+        $file->alt = $edit['header_image_alt'];
+        $file->status = FILE_STATUS_PERMANENT;
+        // Save.
+        file_save($file);
+        // Record that the module is using the file.
+        file_usage_add($file, 'visithasselt_general', 'header_image', $edit['header_image']);
+        variable_set('header_image', $edit['header_image']);
+        i18n_variable_set('header_image_alt', $edit['header_image_alt'], $language->language);
+      }
+      if (!empty($edit['header_title'])) {
+        i18n_variable_set('header_title', $edit['header_title'], $language->language);
+      }
+      break;
+    case 'footer_contactblock':
+      foreach (array('nl', 'fr', 'en', 'de') as $lang) {
+
+        $node_title = $edit['find_contactfiche_' . $lang];
+        i18n_variable_set('footer_contactblock_nid_' . $lang, $node_title, $lang);
+
+        foreach (array('japanse_tuin', 'tour_locale', 'meetinhasselt') as $section) {
+          $node_title = $edit['find_contactfiche_' . $section . '_' . $lang];
+          i18n_variable_set('footer_contactblock_nid_' . $section . '_' . $lang, $node_title, $lang);
+          $node_id = $edit[$section . '_id_'. $lang];
+          i18n_variable_set('nid_' . $section . '_' . $lang , $node_id, $lang);
+        }
+      }
+
+      break;
+    case 'footer_copyright':
+      i18n_variable_set('footer_copyright', $edit['footer_copyright_text']['value'], $language->language);
+      break;
+    case 'side_wide_notification':
+      $notification = array(
+        'body' => !empty($edit['side_wide_notification_body']) ? $edit['side_wide_notification_body'] : NULL,
+        'link' => array(
+          'title' => !empty($edit['side_wide_notification_link_container']['link']['title']) ? $edit['side_wide_notification_link_container']['link']['title'] : '',
+          'url' => !empty($edit['side_wide_notification_link_container']['link']['url']) ? $edit['side_wide_notification_link_container']['link']['url'] : '',
+        ),
+      );
+      i18n_variable_set('side_wide_notification', $notification, $language->language);
+      break;
+    case 'ocmw_newsletter_block':
+      i18n_variable_set('ocmw_newsletter_block_body', $edit['ocmw_newsletter_block_body']['value'], $language->language);
+      break;
+  }
+}
+/**
+ * Implements hook_block_view().
+ */
+function visithasselt_general_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'newsletter_block':
+      $block['subject'] = t('Subscribe to our newsletter and stay up to date');
+      $block['content'] = _visithasselt_general_newsletter_block();
+      break;
+    case 'homepage_social_media':
+      $block['subject'] = '';
+      $block['content'] = _visithasselt_general_homepage_social_media();
+      break;
+    case 'header_image':
+      $block['subject'] = '';
+      $block['content'] = _visithasselt_general_header_image();
+      break;
+    case 'footer_contactblock':
+      $block['subject'] = '';
+      $block['content'] = _visithasselt_general_footer_contactblock();
+      break;
+    case 'footer_copyright':
+      $block['subject'] = '';
+      $block['content'] = _visithasselt_general_footer_copyright();
+      break;
+    case 'side_wide_notification':
+      $block['subject'] = '';
+      $block['content'] = _visithasselt_general_side_wide_notification();
+      break;
+    case 'footer_hasselt_sites_logos':
+      $block['subject'] = '';
+      $block['content'] = _visithasselt_general_footer_hasselt_sites_logos();
+      break;
+    case 'ocmw_newsletter_block':
+      $block['subject'] = t('Subscribe');
+      $block['content'] = _visithasselt_general_ocmw_newsletter_block();
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Function to render the newsletter block output.
+ */
+function _visithasselt_general_newsletter_block() {
+  global $language;
+  $block = array(
+    'newsletter_form' => array(
+      '#type' => 'markup',
+      '#markup' => i18n_variable_get('newsletter_block_body', $language->language, _visithasselt_general_newsletter_block_default()),
+    ),
+  );
+
+  return $block;
+}
+
+/**
+ * Function to render the newsletter block default output.
+ * @Todo: Form ID
+ */
+function _visithasselt_general_newsletter_block_default() {
+
+  $default_value = '<form id="form" action="http://create.sendtex.com/service/FastSubscribeHatch.ashx" method="post">
+  <p>Email: <input id="EmailAddress" name="EmailAddress" type="text" /></p>
+  <input id="ApiKey" name="ApiKey" type="hidden" value="q2FDh53B" />
+  <input id="Hash" name="Hash" type="hidden" value="j5J1Fcw0" />
+  <input id="TargetGroup" name="TargetGroup" type="hidden" value="11493" />
+  <input id="RedirectOnSuccess" name="RedirectOnSuccess" type="hidden" value="http://" />
+  <input id="RedirectOnFail" name="RedirectOnFail" type="hidden" value="http://" />
+  <input id="Submit" type="submit" value="Verzenden" />
+</form>';
+
+  return $default_value;
+}
+
+/**
+ * Render homepage social media
+ * @Todo: Adjust links
+ */
+function _visithasselt_general_homepage_social_media() {
+  $facebook = 'http://www.facebook.com/visithasselt';
+  $twitter = 'https://twitter.com/visithasselt';
+  $instagram = 'https://www.instagram.com/visithasselt';
+
+
+  $value  = '<p>' . t('Follow us: ');
+  $value .= !empty($facebook) ? l('Facebook', $facebook, array('attributes' => array('class' => 'facebook', 'title' => 'Facebook', 'target' => '_blank'), 'absolute' => TRUE)) : '';
+  $value .= !empty($instagram) ? l('Instagram', $instagram, array('attributes' => array('class' => 'instagram', 'title' => 'Instagram', 'target' => '_blank'), 'absolute' => TRUE)) : '';
+  $value .= '</p>';
+  return $value;
+}
+
+/**
+ * Render the header image by node field or default values if no node or no value for the field.
+ */
+function _visithasselt_general_header_image() {
+  global $language;
+  $default_header_image_fid = variable_get('header_image', '');
+  $default_header_image_alt = i18n_variable_get('header_image_alt', $language->language, '');
+  $default_header_image = file_load($default_header_image_fid);
+  $default_header_title = i18n_variable_get('header_title', $language->language, '');
+
+  $content = '';
+
+  $node = menu_get_object();
+  if ($node && is_object($node)) {
+    if (isset($node->field_header_image) && !empty($node->field_header_image)) {
+      $image_field = field_get_items('node', $node, 'field_header_image');
+      $content .= theme('image', array('path' => $image_field[0]['uri']));
+    }
+    else {
+      $content .= theme('image', array('path' => $default_header_image->uri, 'alt' => $default_header_image_alt));
+    }
+    if (isset($node->field_header_title) && !empty($node->field_header_title)) {
+      $content .= '<h1>' . $node->field_header_title[LANGUAGE_NONE][0]['value'] . '</h1>';
+    }
+    else {
+      $content .= '<h1>' . $default_header_title . '</h1>';
+    }
+  }
+
+  return $content;
+
+}
+
+/**
+ * Footer contactblock render contactblock view mode for selected contactfiche
+ */
+function _visithasselt_general_footer_contactblock() {
+  //get all variables needed
+  //global
+  global $language;
+
+  $content = '';
+  $nid = i18n_variable_get('footer_contactblock_nid_'. $language->language, $language->language, '');
+  $current_trail = menu_get_active_trail();
+  $current_path = current_path();
+
+  $sections = array('japanse_tuin', 'tour_locale', 'meetinhasselt');
+
+  foreach ($sections as $section) {
+    $nid_contact = i18n_variable_get('footer_contactblock_nid_' . $section . '_' . $language->language, $language->language, '');
+    $nid_landing = i18n_variable_get('nid_' . $section . '_'. $language->language, $language->language, '');
+
+    //instantiate the translation arrays
+    $tr_paths = array();
+    //load the nodes for the section, based on the config page of the block
+    $node = node_load($nid_landing);
+    //get all paths for the tranlations for japanse tuin and add them to an array
+    if ($node){
+      $tnid = $node->tnid;
+      $translations = translation_node_get_translations($tnid);
+      if (count($translations)) {
+        foreach ($translations as $translation) {
+          $tr_paths[] = 'node/' . $translation->nid;
+        }
+      }
+    }
+    // check if we are on the section page
+    $is_section = FALSE;
+    foreach ($current_trail as $trail) {
+      $path = $trail['link_path'];
+      if (in_array($path, $tr_paths)) {
+        $is_section = true;
+        break;
+      }
+    }
+
+    //if we are on the section page or a page below, show the contactfiche
+    if ($is_section || ($current_trail[1]['menu_name'] == "landings_page_" . $nid_landing)) {
+
+      if (!empty($nid_contact)) {
+        $node = node_load($nid_contact);
+        $node_view = node_view($node, 'contactblok');
+        $content = render($node_view);
+        return $content;
+      }
+    }
+
+  }
+  //show the globale contactfiche
+  if ($nid) {
+    $node = node_load($nid);
+    $node_view = node_view($node, 'contactblok');
+    $content = render($node_view);
+    return $content;
+  }
+}
+
+/**
+ * Footer copyright render block content
+ */
+function _visithasselt_general_footer_copyright() {
+  global $language;
+  $content = i18n_variable_get('footer_copyright', $language->language, _visithasselt_general_footer_copyright_default());
+
+  $social_block = _visithasselt_general_homepage_social_media();
+
+  $content .= $social_block;
+
+  return $content;
+}
+
+/**
+ * Footer copyright default value
+ */
+function _visithasselt_general_footer_copyright_default() {
+  $default_value = '<p><span class="copyright">&copy;2015</span> <a href="#">Privacy & gebruikersvoorwaarden</a></p>';
+  return $default_value;
+}
+
+/**
+ * Content for side wide notification block
+ */
+function _visithasselt_general_side_wide_notification() {
+  global $language;
+  $notification = i18n_variable_get('side_wide_notification', $language->language, array());
+  $content = '';
+  if (!empty($notification['body'])) {
+    $body = $notification['body'];
+    $content .= '<p>' . $body . '</p>';
+  }
+  if (!empty($notification['link']['url'])) {
+    $link_title = !empty($notification['link']['title']) ? $notification['link']['title'] : $notification['link']['url'];
+    $link = l($link_title, $notification['link']['url']);
+    $content .= $link;
+  }
+  return $content;
+}
+
+function _visithasselt_general_footer_hasselt_sites_logos() {
+  $hasselt_logo = drupal_get_path('theme', 'visithasselt_be_theme') . '/stylesheets/img/hasselt-footer-logo.png';
+  $uitinhasselt_logo = drupal_get_path('theme', 'visithasselt_be_theme') . '/stylesheets/img/uitinhasselt-footer-logo.png';
+
+  $hasselt_link = l('<img src="/' . $hasselt_logo . '" alt="Hasselt">', 'https://hasselt.be', array('html' => TRUE, 'attributes' => array('target' => '_blank', 'class' => 'hasselt-footer-logo')));
+  $uitinhasselt_link = l('<img src="/' . $uitinhasselt_logo . '" alt="UiT in Hasselt">', 'http://uitinhasselt.be', array('html' => TRUE, 'attributes' => array('target' => '_blank', 'class' => 'uitinhasselt-footer-logo')));
+
+  return $hasselt_link . $uitinhasselt_link;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function visithasselt_general_menu() {
+  $items = array();
+
+  $items['contactfiche/nodes/autocomplete'] = array(
+    'page callback' => '_contactfiche_nodes_autocomplete_callback',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK
+  );
+
+  $items['admin/config/visithasselt'] = array(
+    'title' => t('Visit Hasselt'),
+    'description' => t('Config pages for Visit Hasselt'),
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array(
+      'administer site configuration'
+    ),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path( 'module', 'system' ),
+  );
+
+  $items['admin/config/visithasselt/settings'] = array(
+    'title' => t('Visit Hasselt settings'),
+    'description' => t('Settings for Visit Hasselt'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('visithasselt_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'includes/admin.inc',
+    'weight' => 1,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['node/%node/landings_page_menu'] = array(
+    'title' => 'Landings page menu',
+    'page callback' => 'visithasselt_general_topic_menu',
+    'page arguments' => array(1),
+    'access callback' => 'visithasselt_general_topic_menu_tab_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'includes/menu.admin.inc',
+    'weight' => -1,
+  );
+  $items['node/%node/send-offer'] = array(
+    'title' => 'send mail link',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('email_custom_action_form', 1),
+    'access callback' => TRUE
+  );
+
+  $items['admin/config/visithasselt/fetch_places_settings'] = array(
+    'title' => t('Fetch places settings'),
+    'description' => t('Fetch places settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('places_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'includes/admin.inc',
+    'weight' => 1,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/visithasselt/list_mails'] = array(
+    'title' => t('Meeting places sent mails'),
+    'description' => t('Fetch sent mails'),
+    'page callback' => 'places_email_listing',
+    'page arguments' => array('places_email_listing'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'includes/admin.inc',
+    'weight' => 1,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/visithasselt/list_mails_csv'] = array(
+    'title' => t('Download CSV'),
+    'page callback' => 'places_email_listing_csv',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'includes/admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Find nodes autocomplete
+ */
+function _contactfiche_nodes_autocomplete_callback($string) {
+  $matches = array();
+
+  // Some fantasy DB table which holds cities
+  $query = db_select('node', 'n');
+
+  // Select rows that match the string
+  $return = $query
+    ->fields('n', array('title', 'nid'))
+    ->condition('n.title', '%' . db_like($string) . '%', 'LIKE')
+    ->condition('n.type', 'contactfiche', '=')
+    ->execute();
+
+  // add matches to $matches
+  foreach ($return as $row) {
+    $matches[check_plain($row->title) . ' (' . $row->nid . ')'] = check_plain($row->title);
+  }
+
+  // return for JS
+  drupal_json_output($matches);
+}
+
+/**
+ * Implements hook_variable_info().
+ */
+function visithasselt_general_variable_info($options) {
+  $variables = array();
+
+  $variables['newsletter_block_body'] = array(
+    'type' => 'text',
+    'title' => t('Visit Hasselt general : Newsletter block body', array(), $options),
+    'default' => '',
+    'description' => t('Visit Hasselt general : Newsletter block body', array(), $options),
+    'localize' => TRUE,
+    'group' => 'visithasselt',
+  );
+  $variables['header_image_alt'] = array(
+    'type' => 'text',
+    'title' => t('Visit Hasselt general : Header image alt', array(), $options),
+    'default' => '',
+    'description' => t('Visit Hasselt general : Header image alt', array(), $options),
+    'localize' => TRUE,
+  );
+  $variables['header_image_title'] = array(
+    'type' => 'text',
+    'title' => t('Visit Hasselt general : Header image title', array(), $options),
+    'default' => '',
+    'description' => t('Visit Hasselt general : Header image title', array(), $options),
+    'localize' => TRUE,
+  );
+  $variables['footer_copyright'] = array(
+    'type' => 'text',
+    'title' => t('Visit Hasselt general : Footer copyright', array(), $options),
+    'default' => '',
+    'description' => t('Visit Hasselt general : Footer copyright', array(), $options),
+    'localize' => TRUE,
+  );
+
+  return $variables;
+}
+
+/**
+ * Implements hook_variable_group_info().
+ */
+function visithasselt_general_variable_group_info() {
+  $groups['visithasselt'] = array(
+    'title' => t('Visit Hasselt'),
+    'description' => t('Visit Hasselt settings'),
+    'access' => 'administer site configuration',
+    'path' => array('admin/config/system/visithasselt'),
+  );
+
+  return $groups;
+}
+
+
+/**
+ * https://wunderkraut.zendesk.com/tickets/10332: return only search results in the current language
+ * Implements hook_apachesolr_query_alter().
+ */
+function visithasselt_general_apachesolr_query_alter($query) {
+  global $language;
+  $query->addFilter('ss_language', $language->language);
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function visithasselt_general_form_alter(&$form, &$form_state, $form_id) {
+  if(isset($form['field_indexpagina'])|| isset($form['field_social_media'])){
+    $form['extra'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Extra'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      // Match #group to the vertical tabs element (usually additional_settings).
+      '#group' => 'additional_settings',
+      '#weight' => -50, //Tab location
+    );
+    if (isset($form['field_indexpagina'])) {
+      $form['extra']['und']['field_indexpagina'] = $form['field_indexpagina'];
+      $form['field_indexpagina']['#access'] = FALSE;
+      $form['#submit'][] = '_field_indexpagina_form_submit';
+    }
+    else {
+      if (isset($form['field_social_media'])) {
+        $form['extra']['und']['field_social_media'] = $form['field_social_media'];
+        $form['#submit'][] = '_field_social_form_submit';
+        $form['field_social_media']['#access'] = FALSE;
+      }
+    }
+  }
+  if ($form_id == 'views_exposed_form' && $form['#id'] == 'views-exposed-form-meetinhasselt-page') {
+    $form['field_activity_type_tid']['#type'] = 'checkboxes';
+    $form['field_seats_value']['#suffix'] = "<span>" . t('personen') . "</span>";
+  }
+}
+
+/**
+ * Helper to check if node has landings page menu
+ */
+function visithasselt_general_landings_page_has_menu($node) {
+  if ($node->type != 'landings_page') {
+    return FALSE;
+  }
+
+  $landings_page_type = !empty($node->field_landings_page_type[LANGUAGE_NONE][0]['value']) ? $node->field_landings_page_type[LANGUAGE_NONE][0]['value'] : NULL;
+  $landings_page_menu = !empty($node->field_landings_page_menu[LANGUAGE_NONE][0]['value']) ? $node->field_landings_page_menu[LANGUAGE_NONE][0]['value'] : FALSE;
+
+  if ($landings_page_type != 'landings_page' || !$landings_page_menu) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function visithasselt_general_node_insert($node) {
+
+  if (visithasselt_general_landings_page_has_menu($node)) {
+
+    $nid = $node->nid;
+
+    if (isset($node->tnid) && !empty($node->tnid)) {
+      $nid = $node->tnid;
+    }
+
+    $menu = array(
+      'menu_name' => 'landings_page_' . $nid,
+      'title' => 'Menu ' . $node->title,
+      'description' => t('Main menu for landings page %nid', array('%nid' => $node->nid)),
+      'i18n_mode' => 5,
+    );
+
+    $menu_exists = db_query("SELECT title FROM {menu_custom} WHERE menu_name=:menu_name", array(':menu_name' => $menu['menu_name']))->fetchField();
+    if (!$menu_exists) {
+      menu_save($menu);
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function visithasselt_general_node_delete($node) {
+
+  if (visithasselt_general_landings_page_has_menu($node)) {
+
+    $nid = $node->nid;
+
+    if (isset($node->tnid) && !empty($node->tnid)) {
+      $nid = $node->tnid;
+    }
+
+    $menu = menu_load('landings_page_' . $nid);
+    if ($menu) {
+      menu_delete($menu);
+    }
+
+  }
+
+  if ($node->type == 'meeting_place') {
+    db_delete('meeting_places_node')
+      ->condition('nid', $node->nid)
+      ->execute();
+  }
+
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function visithasselt_general_node_update($node) {
+
+  $nid = $node->nid;
+  if (isset($node->tnid) && !empty($node->tnid)) {
+    $nid = $node->tnid;
+  }
+
+  if (visithasselt_general_landings_page_has_menu($node)) {
+
+    // Update menu title if node title changed
+    $menu = menu_load('landings_page_' . $nid);
+
+    if ($menu) {
+
+      if ($node->title === $menu->title) {
+        return;
+      }
+
+      $menu->title = $node->title;
+      menu_save($menu);
+
+    }
+    else {
+
+      $menu = array(
+        'menu_name' => 'landings_page_' . $nid,
+        'title' => 'Menu ' . $node->title,
+        'description' => t('Main menu for landings page %nid', array('%nid' => $nid)),
+        'i18n_mode' => 5,
+      );
+
+      $menu_exists = db_query("SELECT title FROM {menu_custom} WHERE menu_name=:menu_name", array(':menu_name' => $menu['menu_name']))->fetchField();
+      if (!$menu_exists) {
+        menu_save($menu);
+      }
+
+    }
+
+  }
+
+  // If checkbox for landings page menu gets unchecked
+  if ($node->type === 'landings_page') {
+
+    $landings_page_type = !empty($node->field_landings_page_type[LANGUAGE_NONE][0]['value']) ? $node->field_landings_page_type[LANGUAGE_NONE][0]['value'] : NULL;
+    $landings_page_menu = !empty($node->field_landings_page_menu[LANGUAGE_NONE][0]['value']) ? $node->field_landings_page_menu[LANGUAGE_NONE][0]['value'] : FALSE;
+
+    $menu_exists = db_query("SELECT title FROM {menu_custom} WHERE menu_name=:menu_name", array(':menu_name' => 'landings_page_' . $node->nid))->fetchField();
+
+    if ($landings_page_type === 'landings_page' && !$landings_page_menu && $menu_exists) {
+      $menu = menu_load('landings_page_' . $node->nid);
+      if ($menu) {
+        menu_delete($menu);
+      }
+    }
+    elseif ($landings_page_type === 'landings_page' && $landings_page_menu && !$menu_exists) {
+      $menu = array(
+        'menu_name' => 'landings_page_' . $nid,
+        'title' => 'Menu ' . $node->title,
+        'description' => t('Main menu for landings page %nid', array('%nid' => $nid)),
+        'i18n_mode' => 5,
+      );
+
+      menu_save($menu);
+    }
+  }
+
+}
+
+
+/**
+ *
+ * Menu access callback for Landings page menu tab on nodes
+ *
+ * @param $node
+ * @return bool
+ */
+function visithasselt_general_topic_menu_tab_access($node) {
+
+  if (user_is_anonymous()) {
+    return FALSE;
+  }
+
+  if ($node->type != 'landings_page') {
+    return FALSE;
+  }
+
+  $landings_page_type = !empty($node->field_landings_page_type[LANGUAGE_NONE][0]['value']) ? $node->field_landings_page_type[LANGUAGE_NONE][0]['value'] : NULL;
+  $landings_page_menu = !empty($node->field_landings_page_menu[LANGUAGE_NONE][0]['value']) ? $node->field_landings_page_menu[LANGUAGE_NONE][0]['value'] : FALSE;
+  if ($landings_page_type != 'landings_page' || !$landings_page_menu) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function visithasselt_general_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/content_types';
+  }
+}
+
+/**
+ * Implements hook_file_presave().
+ */
+function visithasselt_general_file_presave($file) {
+
+  // Bypass secure file extension for .js for field_additional_js field only
+  if((isset($file->source) && strpos($file->source, "field_js_file") !== FALSE) && substr($file->filename, strlen($file->filename) - 7) == ".js.txt") {
+
+    // Define new uri and save previous
+    $original_uri = $file->uri;
+    $new_uri = substr($file->destination, null, -4);
+
+    // Alter file object
+    $file->filemime = 'application/javascript';
+    $file->filename = substr($file->filename, null, -4);
+    $file->destination = file_destination($new_uri, FILE_EXISTS_RENAME);
+    $file->uri = $file->destination;
+
+    // Move fil (to remove .txt)
+    file_unmanaged_move($original_uri, $file->destination);
+
+    // Display message that says that
+    drupal_set_message(t('Security bypassed for .js for this specific field (%f).', array('%f' => $file->filename)));
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function visithasselt_general_node_view($node, $view_mode, $langcode) {
+  if ($node->type == 'meeting_place' && $view_mode == 'full') {
+    $node->content['send_mail_link'] = array(
+      '#markup' => l(t('Send offer'), "node/{$node->nid}/send-offer"),
+      '#prefix' => '<div class="contact-place">',
+      '#suffix' => '</div>',
+    );
+  }
+
+  if (!user_is_anonymous()) {
+    return;
+  }
+
+  if (isset($node->field_js_file)) {
+    if (empty($node->field_js_file[LANGUAGE_NONE][0]['uri'])) {
+      return;
+    }
+
+    $file_url = file_create_url($node->field_js_file[LANGUAGE_NONE][0]['uri']);
+    drupal_add_js(
+      $file_url,
+      array(
+        'type' => 'external',
+        'scope' => 'footer',
+        'group' => JS_THEME,
+      )
+    );
+  }
+
+  if (isset($node->field_css_file)) {
+    if (empty($node->field_css_file[LANGUAGE_NONE][0]['uri'])) {
+      return;
+    }
+
+    $file_url = file_create_url($node->field_css_file[LANGUAGE_NONE][0]['uri']);
+    drupal_add_css(
+      $file_url,
+      array(
+        'type' => 'external',
+        'group' => CSS_THEME,
+      )
+    );
+  }
+
+}
+
+/**
+ * Function to render the OCMW newsletter block output.
+ */
+function _visithasselt_general_ocmw_newsletter_block() {
+  global $language;
+  $block = array(
+    'newsletter_form' => array(
+      '#type' => 'markup',
+      '#markup' => i18n_variable_get('ocmw_newsletter_block_body', $language->language, _visithasselt_general_newsletter_block_default()),
+    ),
+  );
+
+  return $block;
+}
+
+/**
+- * Implements hook_cron_queue_info().
+- */
+function visithasselt_general_cron_queue_info() {
+    $queues['meeting_place_save'] = array(
+        'worker callback' => 'save_place',
+        'time' => 60,
+      );
+    $queues['meeting_place_update'] = array(
+        'worker callback' => 'update_place',
+        'time' => 60,
+      );
+    return $queues;
+ }
+
+ /**
+  * Implements hook_cron
+  */
+ function visithasselt_general_cron() {
+
+    // Trigger fetch only at 1am.
+    if (date('G', REQUEST_TIME) == variable_get('fetch_places_time', 1)) {
+      $last = variable_get('meeting_places_last_fetch', 0);
+
+      if ($last < date('Ymd', REQUEST_TIME)) {
+        module_load_include('inc', 'visithasselt_general', 'includes/meeting_place_node');
+        _get_places();
+        watchdog('fetch_places', 'Mice imported through cron');
+        variable_set('meeting_places_last_fetch', date('Ymd', REQUEST_TIME));
+      }
+    }
+ }
+
+ /**
+  * @param string $id
+  * Save place function
+  */
+ function save_place($id = '') {
+    if (!empty($id)) {
+      module_load_include('inc', 'visithasselt_general', 'includes/meeting_place_node');
+      _save_place($id);
+    }
+ }
+
+ /**
+  * @param string $id
+  * Update place function
+  */
+ function update_place($id = '') {
+    if (!empty($id)) {
+      module_load_include('inc', 'visithasselt_general', 'includes/meeting_place_node');
+      _update_place($id);
+    }
+ }
+
+
+/**
+ * @return array
+ * Custom action for sending mails
+ */
+function visithasselt_general_action_info() {
+  return array(
+    'email_custom_action' => array(
+      'type' => 'node',
+      'label' => t('Custom E-mail Action'),
+      'configurable' => FALSE,
+      'triggers' => array('any'),
+      'behavior' => array(),
+      'vbo_configurable' => TRUE,
+      'pass rows' => TRUE,
+    ),
+  );
+}
+
+/*
+ * email_custom_action form
+ */
+function email_custom_action_form($settings, &$form_state, $node = NULL) {
+  if (empty($node)) {
+    $selected_places = $form_state['selection'];
+  }
+  else {
+    $form['form_title'] = array(
+      '#markup' => t('Quote request'),
+      '#prefix' => '<div class="header-section"><div class="title-section"><h1>',
+      '#suffix' => '</h1></div></div>'
+    );
+    $selected_places = array($node->nid);
+  }
+  $form['node'] = array(
+    '#type' => 'value',
+    '#value' => $node,
+  );
+  $form['start_date'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Arrival Date'),
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '0:+1',
+    '#required' => TRUE,
+  );
+  $form['end_date'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Leave Date'),
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '0:+1',
+    '#required' => TRUE,
+  );
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+  $form['last_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Last name'),
+    '#size' => 60,
+    '#maxlength' => 128,
+  );
+  $form['street'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Street', array(), array('context' => 'Meetinhasselt')),
+    '#size' => 60,
+    '#maxlength' => 128,
+  );
+  $form['number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number', array(), array('context' => 'Meetinhasselt')),
+    '#size' => 10,
+    '#maxlength' => 10,
+  );
+  $form['municipality'] = array(
+    '#type' => 'textfield',
+    '#title' => t('City', array(), array('context' => 'Meetinhasselt')),
+    '#size' => 60,
+    '#maxlength' => 128,
+  );
+  $form['postal_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Postal code', array(), array('context' => 'Meetinhasselt')),
+    '#size' => 10,
+    '#maxlength' => 10,
+  );
+  $form['email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('E-mail'),
+    '#size' => 60,
+    '#maxlength' => 128,
+  );
+  $form['firm_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Company name'),
+    '#size' => 60,
+    '#maxlength' => 128,
+  );
+  $form['btw_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('VAT Number'),
+    '#size' => 20,
+    '#maxlength' => 20,
+  );
+  $form['addition_info'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Optional remarks for'),
+    '#tree' => TRUE,
+  );
+  $form['addition_info']['seats'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of seats needed'),
+    '#size' => 20,
+    '#maxlength' => 5,
+  );
+  foreach ($selected_places as $places) {
+      $place = node_load($places);
+      $place_title = $place->title;
+      $form['addition_info'][$place->nid]["place_{$place->nid}"] = array(
+        '#type' => 'checkbox',
+        '#title' => t($place_title),
+      );
+    $form['addition_info'][$place->nid]['selected_place_description'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Additional Info'),
+      '#title_display' => 'invisible',
+      '#states' => array(
+        'visible' => array(
+          array(
+            ":input[name='addition_info[{$place->nid}][place_{$place->nid}]']" => array('checked' => TRUE),
+          ),
+        ),
+      ),
+    );
+  }
+
+  if (!empty($node)) {
+    $form['submit_button'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit',array(), array('context' => 'Meetinhasselt')),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * @param $form
+ * @param $form_state
+ * @return array
+ * Email custom action Form submit
+ */
+function email_custom_action_submit($form, &$form_state){
+  $return = array();
+  $return = $form_state['values'];
+  return $return;
+}
+
+function email_custom_action_form_submit($form, &$form_state) {
+  if (!empty($form_state['values']['node'])) {
+    $node = $form_state['values']['node'];
+    $context = $form_state['values'];
+    email_custom_action($node, $context);
+    $form_state['redirect'] = "node/{$node->nid}";
+    drupal_set_message(t('Email successfully sent'));
+  }
+}
+
+/**
+ * @param $node
+ * @param $context
+ * email_custom_action function
+ */
+function email_custom_action($node, $context) {
+
+  $email = $node->field_contact['und'][0]['email'];
+
+  // Building message layout
+  $message_body =
+    t(variable_get('meetinhasselt_mail_intro', "Dear, \r\n\r\nThe following person requested information via Meet in Hasselt.\r\n\r\n")).
+    t("Name") . ": " . check_plain($context['name']) . "\r\n" .
+    t("Last name") . ": " . check_plain($context['last_name']) . "\r\n" .
+    t("Street") . ": " . check_plain($context['street']) . " " . check_plain($context['number']) . "\r\n" .
+    t("Municipality") . ": " . check_plain($context['municipality']) . " " . check_plain($context['postal_code']) . "\r\n" .
+    t("Email") . ": " . check_plain($context['email']) . "\r\n" .
+    t("Company name") . ": " . check_plain($context['firm_name']) . "\r\n" .
+    t("VAT Number") . ": " . check_plain($context['btw_number']) . "\r\n" .
+    t("Start Date") . ": " . check_plain($context['start_date']) . "\r\n" .
+    t("End Date") . ": " . check_plain($context['end_date']) . "\r\n" .
+    t("Optional comments for ") . trim(check_plain($node->title)) . " : " . check_plain($context['addition_info'][$node->nid]['selected_place_description']).
+    t(variable_get('meetinhasselt_mail_outro', "\r\n\r\nKind regards\r\n"));
+
+  $params = array(
+    'subject' => check_plain(t('Request an offer')),
+    'body' => check_markup($message_body, 'plain_text'),
+  );
+
+  drupal_mail('visithasselt_general', 'meeting_place_rec_mail', $email, 'en', $params);
+
+  db_insert('meeting_places_emails')
+    ->fields(array(
+      'nid' => $node->nid,
+      'name' => $node->title,
+      'date' => REQUEST_TIME,
+    ))->execute();
+
+}
+
+/**
+ * Implements hook_mail().
+ */
+function visithasselt_general_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'meeting_place_rec_mail':
+      $from = variable_get('meetinhasselt_email', 'meetinhasselt@hasselt.be');
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      $message['from'] = $from;
+      $message['headers']['From'] = $from;
+      $message['headers']['Bcc'] = $from;
+      $message['headers']['Sender'] = $from;
+      $message['headers']['Return-Path'] = $from;
+      break;
+  }
+}
+
+/**
+ * @param $variables
+ * Implements hook_preprocess_html().
+ */
+function visithasselt_general_preprocess_html(&$variables) {
+  $path = drupal_get_path_alias();
+
+  if ($path == variable_get('meetinhasselt_home','visit-hasselt')) {
+    $variables['classes_array'][] = 'filter-meetings';
+  }
+  if ($path == variable_get('meetinhasselt_search','visit-hasselt-search')) {
+    $variables['classes_array'][] = 'request-offer';
+  }
+}
+
+/**
+ * @param $variables
+ * Implements hook_preprocess_page().
+ */
+function visithasselt_general_preprocess_page(&$variables) {
+  $path = drupal_get_path_alias();
+  $search_page = variable_get('meetinhasselt_search','visit-hasselt-search');
+  switch ($path) {
+    case $search_page:
+      $block = block_load('views', '-exp-meetinhasselt-page');
+      $block->weight = -1;
+      $block->title = t('Search results');
+      $variables['page']['content']['meetinhasselt_block'] = _block_get_renderable_array(_block_render_blocks(array($block)));
+      break;
+  }
+}
+
+/**
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ * Implements hook_form_views_form_alter().
+ */
+function visithasselt_general_form_views_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'views_form_meetinhasselt_page') {
+
+    foreach ($form['views_bulk_operations'] as $key => $item) {
+      if (is_array($item)) {
+        $form['views_bulk_operations'][$key]['#title'] = 'Toevoegen aan offertelijst';
+        $form['views_bulk_operations'][$key]['#prefix'] = '<label for="edit-views-bulk-operations-0">';
+        $form['views_bulk_operations'][$key]['#suffix'] = '</label>';
+      }
+    }
+  }
+}
+/**
+ * Implements hook_entity_uuid_presave().
+ *
+ * This is called on the target site. To alter the node before it get's saved.
+ * We assume this is coming from Deploy (stage site). Ids are different.
+ * We convert ids for embeded resources and links to nodes.
+ */
+function vistihasselt_general_entity_uuid_presave($entity, $entity_type) {
+  // Set workbench moderation manually.
+  if (isset($entity->workbench_moderation)) {
+    unset($entity->workbench_moderation);
+    if ($entity->status) {
+      $entity->workbench_moderation_state_new = workbench_moderation_state_published();
+    }
+    else {
+      $entity->workbench_moderation_state_new = workbench_moderation_state_none();
+    }
+  }
+}

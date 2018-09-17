@@ -1,0 +1,12 @@
+.two-column{
+
+}
+.two-columns.add-block{
+
+}
+.main-region{
+  flex: 0 1 50%;
+}
+.sidebar-region{
+  flex: 0 1 50%;
+}

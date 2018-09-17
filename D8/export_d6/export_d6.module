@@ -1,0 +1,22 @@
+<?php
+
+use Drupal\Core\Entity;
+use \Drupal\Core\Form;
+
+/**
+ * Implements hook_entity_insert().
+ */
+function export_d6_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
+//  kint($entity->getFields());
+
+  if(!empty($entity->values['old_nid'])) {
+    $insert = db_insert('import_log')
+    ->fields([
+      'nid' => $entity->entityKeys['id'],
+      'source_nid' => $entity->values['old_nid'],
+      'type' => $entity->entityKeys['bundle'],
+    ])->execute();
+//    kint($entity->values['old_nid']);
+  }
+
+}
